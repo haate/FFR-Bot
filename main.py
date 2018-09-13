@@ -1,5 +1,7 @@
+import asyncio
 import logging
 import re
+import time
 from datetime import datetime, timedelta
 
 from discord.ext import commands
@@ -12,6 +14,7 @@ description = 'FFR discord bot'
 bot = commands.Bot(command_prefix='?', description=description)
 
 # constants
+Sleep_Time = 5000
 challengeseedadmin = "challengeseedadmin"
 asyncseedadmin = "asyncseedadmin"
 adminroles = [challengeseedadmin, asyncseedadmin]
@@ -64,17 +67,17 @@ async def purgemembers(ctx):
 
 
 @bot.command(pass_context=True)
-async def submit(ctx, time: str = None):
+async def submit(ctx, runnertime: str = None):
     """
     Submits a runners time to the leaderboard and gives the appropriate role
-    :param time: time of the runner, in the format H:M:S, e.g. 2:32:12
+    :param runnertime: time of the runner, in the format H:M:S, e.g. 2:32:12
     :param ctx: context of the command
     :return: None
     """
     user = ctx.message.author
     role = await getrole(ctx)
 
-    if time is None:
+    if runnertime is None:
         await bot.send_message(user, "You must include a time when you submit a time.")
         await bot.purge_from(ctx.message.channel, limit=1)
         return
@@ -84,9 +87,9 @@ async def submit(ctx, time: str = None):
             # convert to seconds using this method to make sure the time is readable and valid
             # also allows for time input to be lazy, ie 1:2:3 == 01:02:03 yet still maintain a consistent
             # style on the leaderboard
-            t = datetime.strptime(time, "%H:%M:%S")
+            t = datetime.strptime(runnertime, "%H:%M:%S")
         except ValueError:
-            await bot.send_message(user, "The time you provided '" + str(time) +
+            await bot.send_message(user, "The time you provided '" + str(runnertime) +
                                    "', this is not in the format HH:MM:SS (or you took a day or longer)")
             await bot.purge_from(ctx.message.channel, limit=1)
             return
@@ -319,9 +322,22 @@ async def incrementparticipants(ctx):
 #     channel = ctx.message.channel
 #     await bot.purge_from(channel, limit=100000)
 
+def run_client(client, *args, **kwargs):
+    loop = asyncio.get_event_loop()
+    while True:
+        try:
+            loop.run_until_complete(client.start(*args, **kwargs))
+        except KeyboardInterrupt:
+            loop.run_until_complete(client.logout())
+            break
+        except Exception as e:
+            print("Error", e)
+        print("Waiting until restart")
+        time.sleep(Sleep_Time)
+
 
 with open('token.txt', 'r') as f:
     token = f.read()
-bot.run(token)
 
-bot.run(token)
+
+run_client(bot, token)
