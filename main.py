@@ -244,10 +244,11 @@ async def remove(ctx, *, players: str = None):
             i = 0
             for i in range(len(leaderboard_list)):
                 if leaderboard_list[i][0] == re.sub('[()-]', '', player.display_name):
+                    del leaderboard_list[i]
+                    await bot.remove_roles(player, remove_role)
+                    await changeparticipants(ctx, increment=False, channel=participantnumchannel)
                     break
-            del leaderboard_list[i]
-            await bot.remove_roles(player, remove_role)
-            await changeparticipants(ctx, increment=False, channel=participantnumchannel)
+            
 
         # should already be sorted
         #leaderboard_list.sort(
@@ -265,6 +266,7 @@ async def remove(ctx, *, players: str = None):
 
 
 
+
 @bot.command(pass_context=True)
 async def createleaderboard(ctx, name: str = None):
     """
@@ -273,6 +275,7 @@ async def createleaderboard(ctx, name: str = None):
     :param name: title of the leaderboard
     :return: None
     """
+    
     user = ctx.message.author
     if name is None:
         bot.send_message(user, "You did not submit a name.")
@@ -323,6 +326,11 @@ async def forfeit(ctx):
         await changeparticipants(ctx)
     else:
         await bot.purge_from(ctx.message.channel, limit=1)
+
+# @bot.command()
+# async def testexit():
+#     await bot.say("exiting, should restart right away")
+#     SystemExit()
 
 
 @bot.command(pass_context=True)
@@ -452,6 +460,26 @@ async def changeparticipants(ctx,increment = True, channel = None):
 #     channel = ctx.message.channel
 #     await bot.purge_from(channel, limit=100000)
 
+
+def handle_exit(client,loop):
+    # taken from https://stackoverflow.com/a/50981577
+    loop.run_until_complete(client.logout())
+    for t in asyncio.Task.all_tasks(loop=loop):
+        if t.done():
+            t.exception()
+            continue
+        t.cancel()
+        try:
+            loop.run_until_complete(asyncio.wait_for(t, 5, loop=loop))
+            t.exception()
+        except asyncio.InvalidStateError:
+            pass
+        except asyncio.TimeoutError:
+            pass
+        except asyncio.CancelledError:
+            pass
+
+
 def run_client(client, *args, **kwargs):
     loop = asyncio.get_event_loop()
     while True:
@@ -459,10 +487,13 @@ def run_client(client, *args, **kwargs):
             print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "Starting connection")
             loop.run_until_complete(client.start(*args, **kwargs))
         except KeyboardInterrupt:
-            loop.run_until_complete(client.logout())
+            handle_exit(client, loop)
+            client.loop.close()
+            print("Program ended")
             break
         except Exception as e:
             print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), " Error", e)
+            handle_exit(client, loop)
         print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "Waiting until restart")
         time.sleep(Sleep_Time)
 
