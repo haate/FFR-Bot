@@ -97,6 +97,7 @@ def flagseedgen(flags,site):
     url += "finalfantasyrandomizer.com/Home/Randomize?s=" + ("{0:-0{1}x}".format(seed,8)) + "&f=" + flags
     return url
 
+
 @bot.command(pass_context=True)
 async def ff1seed(ctx):
     user = ctx.message.author
@@ -106,9 +107,8 @@ async def ff1seed(ctx):
         return
     await bot.say("{0:-0{1}x}".format(random.randint(0, 4294967295),8))
 
-
 @bot.command(pass_context=True)
-async def multi(ctx, raceid: str = None):
+async def multireadied(ctx, raceid: str = None):
     user = ctx.message.author
 
     if raceid == None:
@@ -121,7 +121,7 @@ async def multi(ctx, raceid: str = None):
         await bot.say(link)
 
 @bot.command(pass_context=True)
-async def multiall(ctx, raceid: str = None):
+async def multi(ctx, raceid: str = None):
     user = ctx.message.author
 
     if raceid == None:
