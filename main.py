@@ -10,6 +10,7 @@ import urllib.request
 import json
 from io import StringIO
 
+import discord
 from discord.ext import commands
 from discord.utils import get
 
@@ -26,7 +27,7 @@ description = 'FFR discord bot'
 bot = commands.Bot(command_prefix='?', description=description)
 
 # constants
-ADMINS = ["test"]
+ADMINS = ["Primordial Forces", "Dev Admin"]
 Sleep_Time = 5000
 challengeseedadmin = "challengeseedadmin"
 asyncseedadmin = "asyncseedadmin"
@@ -47,6 +48,7 @@ asyncspoiler = "async-spoilers"
 active_races = dict()
 aliases = dict()
 teamslist = dict()
+allow_races_bool = True
 
 @bot.event
 async def on_ready():
@@ -57,13 +59,43 @@ async def on_ready():
 
 def is_admin(ctx):
     user = ctx.author
-    return (any(role.name in ADMINS for role in user.roles))
+    return (any(role.name in ADMINS for role in user.roles)) or (user.id == int(140605120579764226))
 
 def allow_seed_rolling(ctx):
     return (ctx.channel.name == "call_for_races") or (ctx.channel.id in active_races.keys())
 
 def is_call_for_races(ctx):
     return ctx.channel.name == "call_for_races"
+
+def is_race_room(ctx):
+    return ctx.channel.id in active_races.keys()
+
+def is_race_started(toggle = True):
+    async def predicate(ctx):
+        race = active_races[ctx.channel.id]
+        return race.started if toggle else not race.started
+    return commands.check(predicate)
+
+def is_runner(toggle = True):
+    """
+    True is the user is a runner false if a spectator
+    :param ctx: context for the command
+    :return: bool
+    """
+    async def predicate(ctx):
+        rval = ctx.author.id in aliases[ctx.channel.id].keys()
+        return rval if toggle else not rval
+    return commands.check(predicate)
+
+def is_team_leader(ctx):
+    return ctx.author in teamslist[ctx.channel.id].keys()
+
+def is_race_owner(ctx):
+    race = active_races[ctx.channel.id]
+    return ctx.author.id == race.owner
+
+def allow_races(ctx):
+    return allow_races_bool
 
 @bot.command()
 @commands.check(allow_seed_rolling)
@@ -382,8 +414,6 @@ async def forfeit(ctx):
     :param ctx: context of the command
     :return: None
     """
-    if (ctx.channel.id in active_races.keys()):
-        return await raceForfeit(ctx)
     user = ctx.message.author
     role = await getrole(ctx)
 
@@ -533,42 +563,124 @@ async def changeparticipants(ctx,increment = True, channel = None):
 #     channel = ctx.message.channel
 #     await bot.purge_from(channel, limit=100000)
 
+# @bot.command()
+# async def whoami(ctx):
+#     await ctx.author.send(ctx.author.id)
+#     await ctx.message.delete()
+
+
+@bot.command()
+@commands.check(is_admin)
+async def toggleraces(ctx):
+    global allow_races_bool
+    allow_races_bool = not allow_races_bool
+
 @bot.command()
 @commands.check(is_call_for_races)
+@commands.check(allow_races)
 async def startrace(ctx, name):
+    overwrites = {
+        ctx.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        ctx.guild.me: discord.PermissionOverwrite(read_messages=True)
+    }
     racechannel = await ctx.guild.create_text_channel(name, category=get(ctx.guild.categories, name="races"),
                                   reason="bot generated channel for a race, will be deleted after race finishes")
     race = ffrrace.Race(racechannel.id, name)
     active_races[racechannel.id] = race
+    race.role = await ctx.guild.create_role(name=race.id, reason="role for a race")
+    race.channel = racechannel
+    await racechannel.set_permissions(race.role, read_messages=True, send_messages=True)
     await ctx.channel.send('join this race with the following command, @ any people that will be on your team if playing coop')
     await ctx.channel.send('?join ' + str(racechannel.id))
     aliases[racechannel.id] = dict() # for team races
     teamslist[racechannel.id] = dict()
+    race.owner = ctx.author.id
+
+@bot.command()
+@is_race_started(toggle=False)
+@commands.check(is_race_owner)
+@commands.check(is_race_room)
+async def closerace(ctx):
+    await ctx.channel.send('deleting this race in 5 minutes')
+    await removeraceroom(ctx, 300)
 
 @bot.command()
 @commands.check(is_call_for_races)
 async def join(ctx, id, name = None):
-    roles = ctx.guild.roles
-    role = get(roles, name="RaceTest")
-    await ctx.author.add_roles(role)
-    id = int(id)
     await ctx.message.delete()
+    id = int(id)
+    try:
+        if active_races[id].started is True:
+            ctx.channel.send("that race has already started")
+            return
+    except KeyError:
+        await ctx.author.send("That id doesnt exist")
+        return
+
     if name is None:
         name = ctx.author.display_name
-    try:
-        race = active_races[id]
-        race.addRunner(ctx.author.id, name)
-        aliases[id][ctx.author.id] = ctx.author.id
-        teamslist[id][ctx.author.id] = dict([("name",name), ("members", [ctx.author.display_name])])
-        for r in ctx.message.mentions:
-            aliases[id][r.id] = ctx.author.id
-            teamslist[id][ctx.author.id]["members"].append(r.display_name)
 
-    except KeyError:
-        await ctx.author.send("that id doesnt exist")
+    race = active_races[id]
+    await ctx.author.add_roles(race.role)
+    race.addRunner(ctx.author.id, name)
+    aliases[id][ctx.author.id] = ctx.author.id
+    teamslist[id][ctx.author.id] = dict([("name",name), ("members", [ctx.author.display_name])])
+    tagpeople = "Welcome! " + ctx.author.mention
+    for r in ctx.message.mentions:
+        aliases[id][r.id] = ctx.author.id
+        teamslist[id][ctx.author.id]["members"].append(r.display_name)
+        await r.add_roles(race.role)
+        tagpeople += r.mention + " "
+    await race.channel.send(tagpeople)
+
+
 
 
 @bot.command()
+@is_race_started(toggle=False)
+@is_runner()
+@commands.check(is_race_room)
+async def unjoin(ctx):
+    try:
+        race = active_races[ctx.channel.id]
+    except KeyError:
+        await ctx.author.send("KeyError in unjoin command")
+        return
+
+    await ctx.author.remove_roles(race.role)
+    race.removeRunner(ctx.author.id)
+    del aliases[ctx.channel.id][ctx.author.id]
+
+    try:
+        del teamslist[ctx.channel.id][ctx.author.id]
+    except KeyError:
+        pass
+    try:
+        for team in teamslist[ctx.channel.id].values():
+            if (ctx.author.display_name in team["members"]):
+                team["members"].remove(ctx.author.display_name)
+                break
+    except KeyError:
+        pass
+
+@bot.command()
+@commands.check(is_call_for_races)
+async def spectaterace(ctx, id):
+    try:
+        race = active_races[int(id)]
+    except KeyError:
+        return
+    await ctx.message.delete()
+    await ctx.author.add_roles(race.role)
+    if id:
+        await race.channel.send('%s is now cheering you on from the sidelines' % ctx.author.mention)
+
+
+
+@bot.command()
+@is_race_started(toggle=False)
+@is_runner()
+@commands.check(is_race_room)
 async def ready(ctx):
     try:
         race = active_races[ctx.channel.id]
@@ -581,6 +693,9 @@ async def ready(ctx):
         await startcountdown(ctx)
 
 @bot.command()
+@is_race_started(toggle=False)
+@is_runner()
+@commands.check(is_race_room)
 async def unready(ctx):
     try:
         race = active_races[ctx.channel.id]
@@ -590,6 +705,9 @@ async def unready(ctx):
 
 
 @bot.command()
+@is_race_started()
+@is_runner()
+@commands.check(is_race_room)
 async def done(ctx):
     try:
         race = active_races[ctx.channel.id]
@@ -600,14 +718,10 @@ async def done(ctx):
     except KeyError:
         await ctx.channel.send("Key Error in 'done' command")
 
-@bot.command()
-@commands.check(is_admin)
-async def forcestart(ctx):
-    await startcountdown(ctx)
-
-
 
 @bot.command()
+@is_race_started(toggle=False)
+@commands.check(is_race_room)
 async def teams(ctx):
     try:
         rstring = "Teams:\n"
@@ -623,6 +737,9 @@ async def teams(ctx):
         await ctx.channel.send("Key Error in 'teams' command")
     
 @bot.command()
+@is_race_started(toggle=False)
+@commands.check(is_team_leader)
+@commands.check(is_race_room)
 async def teamadd(ctx):
     try:
         race = active_races[ctx.channel.id]
@@ -634,6 +751,9 @@ async def teamadd(ctx):
 
 
 @bot.command()
+@is_race_started(toggle=False)
+@commands.check(is_team_leader)
+@commands.check(is_race_room)
 async def teamremove(ctx):
     try:
         race = active_races[ctx.channel.id]
@@ -644,9 +764,11 @@ async def teamremove(ctx):
         await ctx.channel.send("Key Error in 'teamremove' command")
 
 
-
-
-async def raceForfeit(ctx):
+@bot.command()
+@is_race_started()
+@is_runner()
+@commands.check(is_race_room)
+async def forfeitrace(ctx):
     try:
         race = active_races[ctx.channel.id]
         msg = race.forfeit(aliases[race.id][ctx.author.id])
@@ -662,26 +784,7 @@ async def endrace(ctx, msg):
     await rresults.send(msg + "\n===================================")
     await ctx.channel.send("deleting this channel in 5 minutes")
     await asyncio.sleep(300)
-    channelid = ctx.channel.id
-    del active_races[channelid]
-    roles = ctx.guild.roles
-    role = get(roles, name="RaceTest")
-    members = ctx.guild.members
-    role_members = [x for x in members if role in x.roles]
-
-    for x in role_members:
-        flag = False
-        for race in active_races.values():
-            for mem in race.runners.keys():
-                if x.id == mem:
-                    flag = True
-                    break
-            if flag:
-                break
-        if not flag:
-            await x.remove_roles(role)
-
-    await ctx.channel.delete(reason="bot deleted channel because the race ended")
+    await removeraceroom(ctx)
 
 
 async def startcountdown(ctx):
@@ -691,6 +794,70 @@ async def startcountdown(ctx):
         await asyncio.sleep(1)
     await ctx.channel.send("go!")
     race.start()
+
+async def removeraceroom(ctx, time = 0):
+    await asyncio.sleep(time)
+    race = active_races[ctx.channel.id]
+    role = race.role
+    channel = race.channel
+    del active_races[ctx.channel.id]
+    del aliases[channel.id]
+    del teamslist[channel.id]
+    await channel.delete(reason="bot deleted channel because the race ended")
+    await role.delete(reason="bot deleted role because the race ended")
+
+# Admin Commands
+
+@bot.command()
+@commands.check(is_admin)
+@is_race_started(toggle=False)
+@commands.check(is_race_room)
+async def forcestart(ctx):
+    await startcountdown(ctx)
+
+@bot.command()
+@commands.check(is_admin)
+@commands.check(is_race_room)
+async def forceclose(ctx):
+    await removeraceroom(ctx)
+
+@bot.command()
+@commands.check(is_admin)
+@is_race_started()
+@commands.check(is_race_room)
+async def forceend(ctx):
+    race = active_races[ctx.channel.id]
+    for runner in race.runners.keys():
+        if race.runners[runner]["etime"] == None:
+            race.forfeit(runner)
+    results = race.finishRace()
+    await endrace(ctx, results)
+
+@bot.command()
+@commands.check(is_admin)
+@commands.check(is_race_room)
+async def forceremove(ctx):
+    try:
+        race = active_races[ctx.channel.id]
+    except KeyError:
+        return
+    players = ctx.message.mentions
+    for player in players:
+        await player.remove_roles(race.role)
+        race.removeRunner(ctx.author.id)
+        del aliases[ctx.channel.id][ctx.author.id]
+
+        try:
+            del teamslist[ctx.channel.id][ctx.author.id]
+        except KeyError:
+            pass
+        try:
+            for team in teamslist[ctx.channel.id].values():
+                if (ctx.author.display_name in team["members"]):
+                    team["members"].remove(ctx.author.display_name)
+                    break
+        except KeyError:
+            pass
 
 
 

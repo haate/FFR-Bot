@@ -12,13 +12,20 @@ class Race:
         self.name = name
         self.flags = flags
         self.runners = dict()
+        self.started = False
+        self.role = None
+        self.channel = None
+        self.owner = None
 
 
     def addRunner(self, runnerid, runner):
         self.runners[runnerid] = dict([("name", runner), ("stime", None), ("etime", None), ("ready", False)])
 
+    def removeRunner(self, runnerid):
+        del self.runners[runnerid]
 
     def start(self):
+        self.started = True
         stime = time.perf_counter_ns()
         for runnerid in self.runners.values():
             runnerid["stime"] = stime
