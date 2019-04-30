@@ -607,7 +607,7 @@ async def closerace(ctx):
     await ctx.channel.send('deleting this race in 5 minutes')
     await removeraceroom(ctx, 300)
 
-@bot.command()
+@bot.command(aliases=["enter"])
 @commands.check(allow_seed_rolling)
 async def join(ctx, id = None, name = None):
     await ctx.message.delete()
@@ -641,7 +641,7 @@ async def join(ctx, id = None, name = None):
 
 
 
-@bot.command()
+@bot.command(aliases=['quit'])
 @is_race_started(toggle=False)
 @is_runner()
 @commands.check(is_race_room)
@@ -652,6 +652,8 @@ async def unjoin(ctx):
         await ctx.author.send("KeyError in unjoin command")
         return
 
+    if race.runners[ctx.author.id]["ready"] is True:
+        race.readycount -= 1
     await ctx.author.remove_roles(race.role)
     race.removeRunner(ctx.author.id)
     await ctx.channel.send(ctx.author.display_name + " has left the race.")
