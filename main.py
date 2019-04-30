@@ -72,7 +72,10 @@ def is_race_room(ctx):
 
 def is_race_started(toggle = True):
     async def predicate(ctx):
-        race = active_races[ctx.channel.id]
+        try:
+            race = active_races[ctx.channel.id]
+        except KeyError:
+            return False
         return race.started if toggle else not race.started
     return commands.check(predicate)
 
@@ -589,8 +592,9 @@ async def startrace(ctx, *, name = None):
     race.role = await ctx.guild.create_role(name=race.id, reason="role for a race")
     race.channel = racechannel
     await racechannel.set_permissions(race.role, read_messages=True, send_messages=True)
-    await ctx.channel.send('join this race with the following command, @ any people that will be on your team if playing coop')
+    await ctx.channel.send('join this race with the following ?join command, @ any people that will be on your team if playing coop. Spectate the race with the following ?spectate command')
     await ctx.channel.send('?join ' + str(racechannel.id))
+    await ctx.channel.send('?spectate ' + str(racechannel.id))
     aliases[racechannel.id] = dict() # for team races
     teamslist[racechannel.id] = dict()
     race.owner = ctx.author.id
@@ -683,12 +687,12 @@ async def spectate(ctx, id):
 async def ready(ctx):
     try:
         race = active_races[ctx.channel.id]
-        if (race.runners[aliases[race.id][ctx.author.id]]["ready"] == True):
-            return
-        race.runners[aliases[race.id][ctx.author.id]]["ready"] = True
+        race.ready(ctx.author.id)
+        await ctx.channel.send(ctx.author.display_name + " is READY! " + str(len(race.runners) - race.readycount) + " remaining.")
     except KeyError:
         ctx.channel.send("Key Error in 'ready' command")
-    if (all(r["ready"] is True for r in race.runners.values())):
+        return
+    if (race.readycount == len(race.runners)):
         await startcountdown(ctx)
 
 @bot.command(aliases=['ur'])
@@ -698,9 +702,25 @@ async def ready(ctx):
 async def unready(ctx):
     try:
         race = active_races[ctx.channel.id]
-        race.runners[aliases[race.id][ctx.author.id]]["ready"] = False
+        race.unready(ctx.author.id)
+        await ctx.channel.send(
+            ctx.author.display_name + " is no longer READY. " + str(len(race.runners) - race.readycount) + " remaining.")
     except KeyError:
-        await ctx.channel.send("Key Error in 'unready' command")
+        ctx.channel.send("Key Error in 'ready' command")
+        return
+
+@bot.command(aliases=['e'])
+@commands.check(is_race_room)
+async def entrants(ctx):
+    try:
+        race = active_races[ctx.channel.id]
+    except KeyError:
+        await ctx.channel.send("Key Error in 'entrants' command")
+        return
+    rval = "Current Entrants:\n"
+    for runner in race.runners.values():
+        rval += runner["name"] + (" ready\n" if runner["ready"] else " not ready\n")
+    await ctx.channel.send(rval)
 
 
 @bot.command()
@@ -775,7 +795,7 @@ async def forfeit(ctx):
         if (all(r["etime"] != None for r in race.runners.values())):
             await endrace(ctx, msg)
     except KeyError:
-        await ctx.channel.send("Key Error in 'raceForfeit' function")
+        await ctx.channel.send("Key Error in the '?sr forfeit' command")
 
 @bot.command()
 @commands.check(is_call_for_races)

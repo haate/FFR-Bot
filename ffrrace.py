@@ -16,6 +16,7 @@ class Race:
         self.role = None
         self.channel = None
         self.owner = None
+        self.readycount = 0
 
 
     def addRunner(self, runnerid, runner):
@@ -23,6 +24,18 @@ class Race:
 
     def removeRunner(self, runnerid):
         del self.runners[runnerid]
+
+    def ready(self, runnerid):
+        if (self.runners[runnerid]["ready"] == True):
+            return
+        self.runners[runnerid]["ready"] = True
+        self.readycount += 1
+
+    def unready(self, runnerid):
+        if (self.runners[runnerid]["ready"] == False):
+            return
+        self.runners[runnerid]["ready"] = False
+        self.readycount -= 1
 
     def start(self):
         self.started = True
