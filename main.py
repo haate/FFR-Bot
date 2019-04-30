@@ -608,9 +608,11 @@ async def closerace(ctx):
     await removeraceroom(ctx, 300)
 
 @bot.command()
-@commands.check(is_call_for_races)
-async def join(ctx, id, name = None):
+@commands.check(allow_seed_rolling)
+async def join(ctx, id = None, name = None):
     await ctx.message.delete()
+    if id is None:
+        id = ctx.channel.id
     id = int(id)
     try:
         if active_races[id].started is True:
@@ -652,6 +654,7 @@ async def unjoin(ctx):
 
     await ctx.author.remove_roles(race.role)
     race.removeRunner(ctx.author.id)
+    await ctx.channel.send(ctx.author.display_name + " has left the race.")
     del aliases[ctx.channel.id][ctx.author.id]
 
     try:
