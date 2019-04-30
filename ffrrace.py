@@ -17,6 +17,7 @@ class Race:
         self.channel = None
         self.owner = None
         self.readycount = 0
+        self.message = None
 
 
     def addRunner(self, runnerid, runner):
@@ -53,6 +54,10 @@ class Race:
 
         rval = timedelta(microseconds=round(etime - self.runners[runnerid]["stime"], -3) // 1000)
         return self.runners[runnerid]["name"] + ": " + str(rval)
+
+    def undone(self, runnerid):
+        self.runners[runnerid]["etime"] = None
+        return self.runners[runnerid]["name"] + " is back in the race!"
 
     def forfeit(self, runnerid):
         self.runners[runnerid]["etime"] = maxsize
