@@ -59,7 +59,7 @@ def is_admin(ctx):
 
 
 def allow_seed_rolling(ctx):
-    return (ctx.channel.name == "call_for_races")
+    return (ctx.channel.name == "call_for_races") or (ctx.channel.category_id == get(ctx.guild.categories, name="races").id)
 
 @bot.command()
 @commands.check(allow_seed_rolling)

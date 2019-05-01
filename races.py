@@ -170,6 +170,8 @@ class Races(commands.Cog):
                     break
         except KeyError:
             pass
+        await self.startcountdown(ctx)
+
 
     @commands.command(aliases=['s'])
     @commands.check(is_call_for_races)
@@ -197,10 +199,8 @@ class Races(commands.Cog):
         except KeyError:
             ctx.channel.send("Key Error in 'ready' command")
             return
-        if (race.readycount == len(race.runners)):
-            edited_message = "Race: " + race.name + " has started! Join the race room with the following command!\n ?spectate "+str(race.id)
-            await race.message.edit(content=edited_message)
-            await self.startcountdown(ctx)
+        await self.startcountdown(ctx)
+
 
     @commands.command(aliases=['ur'])
     @is_race_started(toggle=False)
@@ -226,7 +226,8 @@ class Races(commands.Cog):
             return
         rval = "Current Entrants:\n"
         for runner in race.runners.values():
-            rval += runner["name"] + (" ready\n" if runner["ready"] else " not ready\n")
+            rval += runner["name"] + ((" ready" if runner["ready"] else " not ready") if not race.started else
+                                      (" done" if runner["etime"] != None else " still going")) + "\n"
         await ctx.channel.send(rval)
 
 
@@ -335,6 +336,10 @@ class Races(commands.Cog):
 
     async def startcountdown(self, ctx):
         race = active_races[ctx.channel.id]
+        if (race.readycount != len(race.runners)):
+            return
+        edited_message = "Race: " + race.name + " has started! Join the race room with the following command!\n ?spectate "+str(race.id)
+        await race.message.edit(content=edited_message)
         for i in range(10):
             await ctx.channel.send(str(10-i))
             await asyncio.sleep(1)
@@ -411,5 +416,6 @@ class Races(commands.Cog):
     @commands.command()
     @commands.check(is_admin)
     async def toggleraces(self, ctx):
+        global allow_races_bool
         allow_races_bool = not allow_races_bool
         await ctx.channel.send("races " +("enabled" if allow_races_bool else "disabled"))
