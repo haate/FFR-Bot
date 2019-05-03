@@ -66,6 +66,25 @@ class Race:
 
         return self.runners[runnerid]["name"] + " forfeited"
 
+    def getUpdate(self):
+        rval = "Current Entrants:\n"
+        for runner in self.runners.values():
+            rval += runner["name"] + " "
+            if (self.started):
+                if (runner["etime"] is maxsize):
+                    rval += "forfeited"
+                elif (runner["etime"] != None):
+                    time = timedelta(microseconds=round(runner["etime"] - runner["stime"], -3) // 1000)
+                    rval += "done: " + str(time)
+                else:
+                    rval += "still going"
+            else:
+                rval += ("ready" if runner["ready"] else "not ready")
+            rval += "\n"
+        return rval
+
+
+
     def finishRace(self):
         rstring = "Race " + self.name + " results:\n\n"
         place = 0

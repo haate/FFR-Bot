@@ -224,11 +224,8 @@ class Races(commands.Cog):
         except KeyError:
             await ctx.channel.send("Key Error in 'entrants' command")
             return
-        rval = "Current Entrants:\n"
-        for runner in race.runners.values():
-            rval += runner["name"] + ((" ready" if runner["ready"] else " not ready") if not race.started else
-                                      (" done" if runner["etime"] != None else " still going")) + "\n"
-        await ctx.channel.send(rval)
+        msg = race.getUpdate()
+        await ctx.channel.send(msg)
 
 
     @commands.command()
