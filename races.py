@@ -55,7 +55,7 @@ def is_runner(toggle = True):
     return commands.check(predicate)
 
 def is_team_leader(ctx):
-    return ctx.author in teamslist[ctx.channel.id].keys()
+    return ctx.author.id in teamslist[ctx.channel.id].keys()
 
 def is_race_owner(ctx):
     race = active_races[ctx.channel.id]
