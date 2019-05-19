@@ -83,7 +83,9 @@ class Race:
             rval += "\n"
         return rval
 
-
+    def getTime(self):
+        for i in self.runners.values():
+            return timedelta(microseconds=round(time.perf_counter_ns() - i["stime"], -3) // 1000)
 
     def finishRace(self):
         rstring = "Race " + self.name + " results:\n\n"

@@ -254,11 +254,36 @@ class Races(commands.Cog):
         except KeyError:
             await ctx.channel.send("Key Error in 'undone' command")
 
+    @commands.command()
+    @is_race_started()
+    @is_runner()
+    @commands.check(is_race_room)
+    async def forfeit(self, ctx):
+        try:
+            race = active_races[ctx.channel.id]
+            msg = race.forfeit(aliases[race.id][ctx.author.id])
+            await ctx.channel.send(msg)
+            if (all(r["etime"] != None for r in race.runners.values())):
+                await self.endrace(ctx, msg)
+        except KeyError:
+            await ctx.channel.send("Key Error in the 'forfeit' command")
 
     @commands.command(aliases=['t'])
+    @commands.check(is_race_room)
+    @is_race_started(toggle=True)
+    async def time(self, ctx):
+        try:
+            time = active_races[ctx.channel.id].getTime()
+            await ctx.channel.send(time)
+        except KeyError:
+            await ctx.channel.send("Key Error in the 'time' command")
+
+
+
+    @commands.command(aliases=['tl'])
     @is_race_started(toggle=False)
     @commands.check(is_race_room)
-    async def teams(self, ctx):
+    async def teamlist(self, ctx):
         try:
             rstring = "Teams:\n"
             race = active_races[ctx.channel.id]
@@ -300,19 +325,6 @@ class Races(commands.Cog):
             await ctx.channel.send("Key Error in 'teamremove' command")
 
 
-    @commands.command()
-    @is_race_started()
-    @is_runner()
-    @commands.check(is_race_room)
-    async def forfeit(self, ctx):
-        try:
-            race = active_races[ctx.channel.id]
-            msg = race.forfeit(aliases[race.id][ctx.author.id])
-            await ctx.channel.send(msg)
-            if (all(r["etime"] != None for r in race.runners.values())):
-                await self.endrace(ctx, msg)
-        except KeyError:
-            await ctx.channel.send("Key Error in the '?sr forfeit' command")
 
     @commands.command()
     @commands.check(is_call_for_races)
