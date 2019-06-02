@@ -108,3 +108,6 @@ venv.bak/
 
 # discord sign in token
 token.txt
+
+# local docker deploy script
+deploy.ps1

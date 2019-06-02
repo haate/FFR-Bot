@@ -1,6 +1,12 @@
 import time
 from datetime import datetime, timedelta
 from sys import maxsize
+import json
+import redis
+import os
+
+redis_db = redis.Redis(host=os.environ.get("REDIS_HOST", "localhost"),
+            port=int(os.environ.get("REDIS_PORT", "6379")))
 
 class Race:
     """
@@ -19,6 +25,10 @@ class Race:
         self.readycount = 0
         self.message = None
 
+
+    # def savedata(self):
+    #     redis_db.hmset('active_races', json.dumps(active_races))
+    #
 
     def addRunner(self, runnerid, runner):
         self.runners[runnerid] = dict([("name", runner), ("stime", None), ("etime", None), ("ready", False)])
