@@ -490,6 +490,11 @@ class Races(commands.Cog):
         redis_db.hset('twitchids', ctx.author.id, id)
         await ctx.channel.send('twitch id set to: ' + self.twitchids[str(ctx.author.id)])
 
+    @commands.command()
+    async def stream(self, ctx):
+        for player in ctx.message.mentions:
+            await ctx.channel.send(r'https://www.twitch.tv/{}'.format(self.twitchids[str(player.id)]))
+
     # Admin Commands
 
     @commands.command()
