@@ -486,9 +486,9 @@ class Races(commands.Cog):
 
     @commands.command()
     async def twitchid(self, ctx, id=''):
-        self.twitchids[ctx.author.id] = id
+        self.twitchids[str(ctx.author.id)] = id
         redis_db.hset('twitchids', ctx.author.id, id)
-        await ctx.channel.send('twitch id set.')
+        await ctx.channel.send('twitch id set to: ' + self.twitchids[str(ctx.author.id)])
 
     # Admin Commands
 
