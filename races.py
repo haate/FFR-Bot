@@ -440,7 +440,7 @@ class Races(commands.Cog):
             if raceid == None:
                 race = active_races[ctx.channel.id]
             else:
-                race = active_races[raceid]
+                race = active_races[int(raceid)]
             link = await self.multistream(race, all=True, discord=True, ctx=ctx)
             await ctx.channel.send(link)
 
