@@ -150,11 +150,11 @@ class Races(commands.Cog):
         await ctx.author.add_roles(race.role)
         race.addRunner(ctx.author.id, name)
         aliases[id][ctx.author.id] = ctx.author.id
-        teamslist[id][ctx.author.id] = dict([("name", name), ("members", [ctx.author.display_name])])
+        teamslist[id][ctx.author.id] = dict([("name", name), ("members", [[ctx.author.display_name, ctx.author.id]])])
         tagpeople = "Welcome! " + ctx.author.mention
         for r in ctx.message.mentions:
             aliases[id][r.id] = ctx.author.id
-            teamslist[id][ctx.author.id]["members"].append(r.display_name)
+            teamslist[id][ctx.author.id]["members"].append([r.display_name, r.id])
             await r.add_roles(race.role)
             tagpeople += r.mention + " "
         await race.channel.send(tagpeople)
@@ -182,8 +182,8 @@ class Races(commands.Cog):
             pass
         try:
             for team in teamslist[ctx.channel.id].values():
-                if (ctx.author.display_name in team["members"]):
-                    team["members"].remove(ctx.author.display_name)
+                if ([ctx.author.display_name, ctx.author.id] in team["members"]):
+                    team["members"].remove([ctx.author.display_name, ctx.author.id])
                     break
         except KeyError:
             pass
@@ -302,7 +302,7 @@ class Races(commands.Cog):
             for team in teamslist[race.id].values():
                 rstring += team["name"] + ":"
                 for member in team["members"]:
-                    rstring += " " + member + ","
+                    rstring += " " + member[0] + ","
                 rstring = rstring[:-1]
                 rstring += "\n"
             await ctx.channel.send(rstring)
@@ -318,7 +318,7 @@ class Races(commands.Cog):
             race = active_races[ctx.channel.id]
             for player in ctx.message.mentions:
                 aliases[race.id][player.id] = ctx.author.id
-                teamslist[race.id][ctx.author.id]["members"].append(player.display_name)
+                teamslist[race.id][ctx.author.id]["members"].append([player.display_name,player.id])
         except KeyError:
             await ctx.channel.send("Key Error in 'teamadd' command")
 
@@ -331,7 +331,7 @@ class Races(commands.Cog):
             race = active_races[ctx.channel.id]
             for player in ctx.message.mentions:
                 del aliases[race.id][player.id]
-                teamslist[race.id][ctx.author.id]["members"].remove(player.display_name)
+                teamslist[race.id][ctx.author.id]["members"].remove([player.display_name,player.id])
         except KeyError:
             await ctx.channel.send("Key Error in 'teamremove' command")
 
@@ -437,18 +437,18 @@ class Races(commands.Cog):
     async def multi(self, ctx, raceid: str = None):
         user = ctx.message.author
         try:
-            if raceid == None:
+            if raceid is None:
                 race = active_races[ctx.channel.id]
             else:
                 race = active_races[int(raceid)]
             link = await self.multistream(race, all=True, discord=True, ctx=ctx)
             await ctx.channel.send(link)
 
-        except KeyError:
+        except (KeyError, ValueError):
             if raceid == None:
                 await user.send("You need to supply the race id to get the multistream link.")
                 return
-            link = await self.multistream(raceid, all=True)
+            link = await self.multistream(raceid, all=True, discord=False)
             if link == None:
                 await ctx.channel.send('There is no race with that 5 character id')
             else:
@@ -459,14 +459,15 @@ class Races(commands.Cog):
         ms_tmp = r"http://multistre.am/{}/"
         if discord:
             runners = []
-            for runner in race.runners.keys():
-                try:
-                    if (self.twitchids[str(runner)] is not ''):
-                        runners.append(self.twitchids[str(runner)])
-                except KeyError:
-                    pass
+            for team in teamslist[race.id].values():
+                for runner in team["members"]:
+                    try:
+                        if (self.twitchids[str(runner[1])] is not ''):
+                            runners.append(self.twitchids[str(runner[1])])
+                    except KeyError:
+                        pass
             return ms_tmp.format(r'/'.join(runners))
-        race = race.strip()[:-5]
+        race = race.strip()[-5:]
         srlurl = srl_tmp.format(race)
         data = ""
         with urllib.request.urlopen(srlurl) as response:
@@ -533,17 +534,17 @@ class Races(commands.Cog):
         players = ctx.message.mentions
         for player in players:
             await player.remove_roles(race.role)
-            race.removeRunner(ctx.author.id)
-            del aliases[ctx.channel.id][ctx.author.id]
+            race.removeRunner(player.id)
+            del aliases[ctx.channel.id][player.id]
 
             try:
-                del teamslist[ctx.channel.id][ctx.author.id]
+                del teamslist[ctx.channel.id][player.id]
             except KeyError:
                 pass
             try:
                 for team in teamslist[ctx.channel.id].values():
-                    if (ctx.author.display_name in team["members"]):
-                        team["members"].remove(ctx.author.display_name)
+                    if any(player.id in x for x in team["members"]):
+                        team["members"].remove([player.display_name, player.id])
                         break
             except KeyError:
                 pass
