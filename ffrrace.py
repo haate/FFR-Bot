@@ -24,6 +24,7 @@ class Race:
         self.owner = None
         self.readycount = 0
         self.message = None
+        self.restream = None
 
 
     # def savedata(self):

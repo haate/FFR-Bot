@@ -335,7 +335,6 @@ class Races(commands.Cog):
         except KeyError:
             await ctx.channel.send("Key Error in 'teamremove' command")
 
-    @commands.command()
     @commands.check(is_call_for_races)
     async def races(self, ctx):
         rval = "Current races:\n"
@@ -352,16 +351,36 @@ class Races(commands.Cog):
 
     async def startcountdown(self, ctx):
         race = active_races[ctx.channel.id]
+        multi = await self.multistream(race, all=True, discord=True, ctx=ctx)
         if (race.readycount != len(race.runners)):
             return
         edited_message = "Race: " + race.name + " has started! Join the race room with the following command!\n ?spectate " + str(
-            race.id)
+            race.id) + "\nWatch the race at: " + (race.restream if race.restream is not None else multi)
         await race.message.edit(content=edited_message)
         for i in range(10):
             await ctx.channel.send(str(10 - i))
             await asyncio.sleep(1)
         await ctx.channel.send("go!")
         race.start()
+
+    @commands.command()
+    @commands.check(is_race_room)
+    async def restream(self, ctx, streamid=None):
+        try:
+            race = active_races[ctx.channel.id]
+        except KeyError:
+            ctx.channel.send("this isnt a race channel, cant set restream here")
+            return
+        race.restream = streamid
+        await ctx.channel.send('restream set to: ' + race.restream)
+        edited_message = ('join this race with the following ?join command,' \
+                         ' @ any people that will be on your team if playing ' \
+                         'coop. Spectate the race with the following ?spectate' \
+                         ' command\n?join ' + str(race.id) + '\n?spectate ' +
+                          str(race.id) + "\nWatch the race at: " + race.restream)
+
+        await race.message.edit(content=edited_message)
+
 
     async def removeraceroom(self, ctx, time=0):
         await asyncio.sleep(time)
