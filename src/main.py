@@ -90,6 +90,12 @@ async def submit(ctx, runnertime: str = None):
     """
     user = ctx.message.author
     role = await getrole(ctx)
+    if (role.name == constants.ducklingrole and
+       constants.rolerequiredduckling not in
+       [role.name for role in user.roles]):
+        await user.send("You're not a duckling!")
+        await ctx.message.delete()
+        return
 
     if runnertime is None:
         await user.send("You must include a time when you submit a time.")
@@ -112,7 +118,6 @@ async def submit(ctx, runnertime: str = None):
             return
 
         await user.add_roles(role)
-
         delta = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
         username = re.sub('[()-]', '', user.display_name)
         leaderboard = await getleaderboard(ctx)
@@ -274,6 +279,13 @@ async def createleaderboard(ctx, name):
         await get(ctx.message.guild.channels, name=constants.asyncchannel)\
             .send("Number of participants: 0")
 
+    elif role in user.roles and role.name == constants.ducklingadminrole:
+        await get(ctx.message.guild.channels,
+                  name=constants.ducklingleaderboard)\
+            .send(name + "\n\nForfeits - 0")
+        await get(ctx.message.guild.channels, name=constants.ducklingchannel)\
+            .send("Number of participants: 0")
+
     else:
         await user.send(("... Wait a second.. YOU AREN'T AN ADMIN! (note, you"
                          " need the admin role for this channel)"))
@@ -344,8 +356,10 @@ async def getrole(ctx):
     channels = ctx.message.guild.channels
     challengeseed = get(channels, name=constants.challengeseedchannel)
     asyncseed = get(channels, name=constants.asyncchannel)
+    ducklingseed = get(channels, name=constants.ducklingchannel)
     chalseedspoilerobj = get(channels, name=constants.challengeseedspoiler)
     asyseedspoilerobj = get(channels, name=constants.asyncspoiler)
+    duckseedspoilerobj = get(channels, name=constants.ducklingspoiler)
 
     if channel == challengeseed:
         role = get(roles, name=constants.challengeseedrole)
@@ -355,6 +369,10 @@ async def getrole(ctx):
         role = get(roles, name=constants.challengeseedadmin)
     elif channel == asyseedspoilerobj:
         role = get(roles, name=constants.asyncseedadmin)
+    elif channel == ducklingseed:
+        role = get(roles, name=constants.ducklingrole)
+    elif channel == duckseedspoilerobj:
+        role = get(roles, name=constants.ducklingadminrole)
     else:
         await user.send("That command isn't allowed here.")
         return None
@@ -374,6 +392,7 @@ async def getleaderboard(ctx):
     channels = ctx.message.guild.channels
     challengeseed = get(channels, name=constants.challengeseedchannel)
     asyncseed = get(channels, name=constants.asyncchannel)
+    ducklingseed = get(channels, name=constants.ducklingchannel)
 
     if channel == challengeseed:
         leaderboard = get(
@@ -383,6 +402,10 @@ async def getleaderboard(ctx):
             limit=100)
     elif channel == asyncseed:
         leaderboard = get(channels, name=constants.asyncleaderboard).history(
+            oldest_first=True, limit=100)
+    elif channel == ducklingseed:
+        leaderboard = get(channels,
+                          name=constants.ducklingleaderboard).history(
             oldest_first=True, limit=100)
     else:
         await user.send("That command isn't allowed here.")
@@ -408,11 +431,14 @@ async def getspoilerchat(ctx):
     channels = ctx.message.guild.channels
     challengeseed = get(channels, name=constants.challengeseedchannel)
     asyncseed = get(channels, name=constants.asyncchannel)
+    ducklingseed = get(channels, name=constants.ducklingchannel)
 
     if channel == challengeseed:
         spoilerchat = get(channels, name=constants.challengeseedspoiler)
     elif channel == asyncseed:
         spoilerchat = get(channels, name=constants.asyncspoiler)
+    elif channel == ducklingseed:
+        spoilerchat = get(channels, name=constants.ducklingspoiler)
     else:
         await user.send("That command isn't allowed here.")
         return None
