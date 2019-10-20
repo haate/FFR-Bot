@@ -410,9 +410,9 @@ async def getspoilerchat(ctx):
     asyncseed = get(channels, name=constants.asyncchannel)
 
     if channel == challengeseed:
-        spoilerchat = get(channels, name='challengeseedspoilerchat')
+        spoilerchat = get(channels, name=constants.challengeseedspoilers)
     elif channel == asyncseed:
-        spoilerchat = get(channels, name='async-spoilers')
+        spoilerchat = get(channels, name=constants.asyncspoilers)
     else:
         await user.send("That command isn't allowed here.")
         return None
