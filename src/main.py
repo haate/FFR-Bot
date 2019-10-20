@@ -4,11 +4,14 @@ import re
 import time
 from datetime import datetime, timedelta
 
+import os
+import redis
 
 from discord.ext import commands
 from discord.utils import get
 
 from races import Races
+from roles import Roles
 import constants
 
 
@@ -23,9 +26,15 @@ description = "FFR discord bot"
 bot = commands.Bot(command_prefix="?", description=description,
                    case_insensitive=True)
 
-# constants
 
-bot.add_cog(Races(bot, constants.ADMINS))
+redis_db = redis.Redis(
+    host=os.environ.get(
+        "REDIS_HOST", "localhost"), port=int(
+            os.environ.get(
+                "REDIS_PORT", "6379")), decode_responses=True)
+
+bot.add_cog(Races(bot, redis_db))
+bot.add_cog(Roles(bot))
 
 
 @bot.event
@@ -91,8 +100,8 @@ async def submit(ctx, runnertime: str = None):
     user = ctx.message.author
     role = await getrole(ctx)
     if (role.name == constants.ducklingrole and
-       constants.rolerequiredduckling not in
-       [role.name for role in user.roles]):
+        constants.rolerequiredduckling not in
+            [role.name for role in user.roles]):
         await user.send("You're not a duckling!")
         await ctx.message.delete()
         return

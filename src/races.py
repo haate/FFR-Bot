@@ -1,6 +1,4 @@
 import asyncio
-import os
-import redis
 import random
 
 import urllib
@@ -13,12 +11,6 @@ from discord.utils import get
 
 import ffrrace
 import constants
-
-redis_db = redis.Redis(
-    host=os.environ.get(
-        "REDIS_HOST", "localhost"), port=int(
-            os.environ.get(
-                "REDIS_PORT", "6379")), decode_responses=True)
 
 active_races = dict()
 aliases = dict()
@@ -85,13 +77,14 @@ def is_admin(ctx):
 
 class Races(commands.Cog):
 
-    def __init__(self, bot, ADMINS):
+    def __init__(self, bot, redis_db):
         self.bot = bot
         self.twitchids = dict()
+        self.redis_db = redis_db
         self.loaddata()
 
     def loaddata(self):
-        self.twitchids = dict(redis_db.hgetall('twitchids'))
+        self.twitchids = dict(self.redis_db.hgetall('twitchids'))
 
     @commands.command(aliases=['sr'])
     @commands.check(is_call_for_races)
@@ -546,7 +539,7 @@ class Races(commands.Cog):
     @commands.command()
     async def twitchid(self, ctx, id=''):
         self.twitchids[str(ctx.author.id)] = id
-        redis_db.hset('twitchids', ctx.author.id, id)
+        self.redis_db.hset('twitchids', ctx.author.id, id)
         await ctx.channel.send('twitch id set to: '
                                + self.twitchids[str(ctx.author.id)])
 

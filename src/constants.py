@@ -22,3 +22,6 @@ rolerequiredduckling = 'duckling'
 call_for_races_channel = "race-organization"
 races_category = "Racing"
 race_results = "race-results"
+self_assignable_roles = ["duckling", "race crew", "restreamer",
+                         "Ping Me To Race"]
+role_requests = "role-requests"
