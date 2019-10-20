@@ -14,33 +14,43 @@ class Roles(commands.Cog):
 
     @commands.command()
     @commands.check(is_role_requests_channel)
-    async def addrole(self, ctx, role=None):
+    async def addrole(self, ctx, *, role=None):
         if role is None:
             await ctx.author.send('you forget to ask for a role')
             await ctx.message.delete()
-        elif role not in constants.self_assignable_roles:
+            return
+        role_clean = role.lower().strip("\"'")
+        if role_clean not in \
+                [x.lower() for x in constants.self_assignable_roles]:
             await ctx.author.send('you cannot give yourself the role: '
-                                  + role)
+                                  + role + "\n or that role doesnt exist")
             await ctx.message.delete()
         else:
             roles = ctx.message.guild.roles
-            role_obj = get(roles, name=role)
+            role_obj = get(roles,
+                           name=next(x for x in constants.self_assignable_roles
+                                     if x.lower() == role_clean))
             await ctx.author.add_roles(role_obj)
             await ctx.message.add_reaction('✔')
 
     @commands.command()
     @commands.check(is_role_requests_channel)
-    async def removerole(self, ctx, role=None):
+    async def removerole(self, ctx, *, role=None):
         if role is None:
             await ctx.author.send('you forget to say which role to remove')
             await ctx.message.delete()
-        elif role not in constants.self_assignable_roles:
+            return
+        role_clean = role.lower().strip("\"'")
+        if role_clean not in \
+                [x.lower() for x in constants.self_assignable_roles]:
             await ctx.author.send('you cannot remove yourself from the role: '
-                                  + role)
+                                  + role + "\n or that role doesnt exist")
             await ctx.message.delete()
         else:
             roles = ctx.message.guild.roles
-            role_obj = get(roles, name=role)
+            role_obj = get(roles,
+                           name=next(x for x in constants.self_assignable_roles
+                                     if x.lower() == role_clean))
             await ctx.author.remove_roles(role_obj)
             await ctx.message.add_reaction('✔')
 
