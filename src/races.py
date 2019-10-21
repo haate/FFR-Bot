@@ -368,9 +368,6 @@ class Races(commands.Cog):
         multi = await self.multistream(race, all=True, discord=True, ctx=ctx)
         if (race.readycount != len(race.runners)):
             return
-        print(race.restream)
-        print(race.restream is None)
-        print(multi)
         edited_message = "Race: " + race.name \
             + " has started! Join the race room with the following command!" \
             + "\n?spectate " + str(race.id) + "\nWatch the race at: " \
@@ -519,9 +516,10 @@ class Races(commands.Cog):
                             runners.append(self.twitchids[str(runner[1])])
                     except KeyError:
                         no_twitch_id.append(runner[0])
-            ms_tmp = ms_tmp.format(r'/'.join(runners)) \
-                + "\nRunners without a set" \
-                + " twitch Id: \n" + ", ".join(no_twitch_id)
+            ms_tmp = ms_tmp.format(r'/'.join(runners))
+            if len(no_twitch_id) != 0:
+                ms_tmp += "\nRunners without a set" \
+                    + " twitch Id: \n" + ", ".join(no_twitch_id)
             return ms_tmp
         race = race.strip()[-5:]
         srlurl = srl_tmp.format(race)
@@ -540,9 +538,7 @@ class Races(commands.Cog):
         except KeyError:
             return None
         entrants_2 = r'/'.join(entrants)
-        ret = ms_tmp.format(entrants_2) \
-            + "\nRunners without a set" \
-            + "twitch Id" + ", ".join(no_twitch_id)
+        ret = ms_tmp.format(entrants_2)
         return ret
 
     @commands.command()
