@@ -368,10 +368,13 @@ class Races(commands.Cog):
         multi = await self.multistream(race, all=True, discord=True, ctx=ctx)
         if (race.readycount != len(race.runners)):
             return
+        print(race.restream)
+        print(race.restream is None)
+        print(multi)
         edited_message = "Race: " + race.name \
             + " has started! Join the race room with the following command!" \
-            + "\n?spectate " + str(race.id) + "\nWatch the race at: "
-        (race.restream if race.restream is not None else multi)
+            + "\n?spectate " + str(race.id) + "\nWatch the race at: " \
+            + (race.restream if race.restream is not None else multi)
         await race.message.edit(content=edited_message)
         for i in range(10):
             await ctx.channel.send(str(10 - i))
@@ -508,14 +511,18 @@ class Races(commands.Cog):
         ms_tmp = r"http://multistre.am/{}/"
         if discord:
             runners = []
+            no_twitch_id = []
             for team in teamslist[race.id].values():
                 for runner in team["members"]:
                     try:
                         if (self.twitchids[str(runner[1])] != ''):
                             runners.append(self.twitchids[str(runner[1])])
                     except KeyError:
-                        pass
-            return ms_tmp.format(r'/'.join(runners))
+                        no_twitch_id.append(runner[0])
+            ms_tmp = ms_tmp.format(r'/'.join(runners)) \
+                + "\nRunners without a set" \
+                + " twitch Id: \n" + ", ".join(no_twitch_id)
+            return ms_tmp
         race = race.strip()[-5:]
         srlurl = srl_tmp.format(race)
         data = ""
@@ -533,7 +540,9 @@ class Races(commands.Cog):
         except KeyError:
             return None
         entrants_2 = r'/'.join(entrants)
-        ret = ms_tmp.format(entrants_2)
+        ret = ms_tmp.format(entrants_2) \
+            + "\nRunners without a set" \
+            + "twitch Id" + ", ".join(no_twitch_id)
         return ret
 
     @commands.command()

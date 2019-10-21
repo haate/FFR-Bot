@@ -57,9 +57,11 @@ class Roles(commands.Cog):
     @commands.command()
     @commands.check(is_role_requests_channel)
     async def listroles(self, ctx):
-        await ctx.author.send("Self assignable roles: "
-                              + ", ".join(constants.self_assignable_roles)
-                              + '\n use ?addrole "rolename" in role-requests'
+        await ctx.author.send("Self assignable roles:\n\n"
+                              + "\n\n".join([x[0] + ": " + x[1] for x in
+                                           zip(constants.self_assignable_roles,
+                                               constants.self_assignable_roles_descriptions)])
+                              + '\n\n\nCommands:\n\n use ?addrole "rolename" in role-requests'
                               + " to add yourself to a role, or you can"
-                              + '\n use ?removerole "rolename" to remove it.')
+                              + '\n\n use ?removerole "rolename" to remove it.')
         await ctx.message.add_reaction('✔')
