@@ -12,6 +12,7 @@ from discord.utils import get
 
 from races import Races
 from roles import Roles
+from polls import Polls
 import constants
 
 
@@ -26,23 +27,28 @@ description = "FFR discord bot"
 bot = commands.Bot(command_prefix="?", description=description,
                    case_insensitive=True)
 
+redis_pool = redis.ConnectionPool(host=os.environ.get(
+    "REDIS_HOST", "localhost"), port=int(
+    os.environ.get(
+        "REDIS_PORT", "6379")))
 
-redis_db = redis.Redis(
-    host=os.environ.get(
-        "REDIS_HOST", "localhost"), port=int(
-            os.environ.get(
-                "REDIS_PORT", "6379")), decode_responses=True)
+redis_utf8 = redis.Redis(connection_pool=redis_pool,
+                         charset="utf-8",
+                         decode_responses=True)
+redis_bin = redis.StrictRedis(connection_pool=redis_pool,
+                              decode_responses=False)
 
-bot.add_cog(Races(bot, redis_db))
+bot.add_cog(Races(bot, redis_utf8))
 bot.add_cog(Roles(bot))
+bot.add_cog(Polls(bot, redis_bin))
 
 
 @bot.event
 async def on_ready():
-    print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ' Logged in as')
-    print(bot.user.name)
-    print(bot.user.id)
-    print('------')
+    logging.info("Logged in as")
+    logging.info(bot.user.name)
+    logging.info(bot.user.id)
+    logging.info("------")
 
 
 def is_admin(ctx):
@@ -485,10 +491,11 @@ async def changeparticipants(ctx, increment=True, channel=None):
 #     channel = ctx.message.channel
 #     await bot.purge_from(channel, limit=100000)
 
-# @bot.command()
-# async def whoami(ctx):
-#     await ctx.author.send(ctx.author.id)
-#     await ctx.message.delete()
+@bot.command()
+async def whoami(ctx):
+    await ctx.author.send(ctx.author.id)
+    await ctx.message.delete()
+
 
 def handle_exit(client, loop):
     # taken from https://stackoverflow.com/a/50981577
@@ -513,19 +520,17 @@ def run_client(client, *args, **kwargs):
     loop = asyncio.get_event_loop()
     while True:
         try:
-            print(datetime.now().strftime(
-                '%Y-%m-%d %H:%M:%S'), "Starting connection")
+            logging.info("Starting connection")
             loop.run_until_complete(client.start(*args, **kwargs))
         except KeyboardInterrupt:
             handle_exit(client, loop)
             client.loop.close()
-            print("Program ended")
+            logging.info("Program ended")
             break
         except Exception as e:
-            print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), " Error", e)
+            logging.exception(e)
             handle_exit(client, loop)
-        print(datetime.now().strftime(
-            '%Y-%m-%d %H:%M:%S'), "Waiting until restart")
+        logging.info("Waiting until restart")
         time.sleep(constants.Sleep_Time)
 
 
