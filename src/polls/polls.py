@@ -351,4 +351,16 @@ class Polls(commands.Cog):
         csv_file_name = poll.get_csv()
         with open(csv_file_name, mode="rb") as csv_file:
             f = File(csv_file)
-            await ctx.channel.send("testing", file=f)
+            await ctx.channel.send("votes", file=f)
+
+    @commands.command()
+    async def getcount(self, ctx):
+        try:
+            poll = self.polls[str(ctx.channel.id)]
+        except KeyError:
+            await ctx.author.send(text.no_poll_in_channel)
+            await ctx.message.delete()
+            return
+        await ctx.author.send("number of ballots cast: "
+                              + str(poll.get_count()))
+        await ctx.message.delete()

@@ -31,6 +31,9 @@ class Poll:
     def get_channel(self):
         return self.channel_id
 
+    def get_count(self):
+        return len(self.voters)
+
     def add_option(self, ctx: any, args: list):
         id = args[0]
         description = args[1]
