@@ -141,8 +141,9 @@ class Poll:
                 + " that number:")
 
     def get_submitballot_template(self):
-        r_val = "\n`?submitballot " + str(self.channel_id) + " < x >`\n\n"
+        r_val = "\n`?submitballot " + str(self.channel_id) + " <x>`\n\n"
         r_val += self.list_options()
+        return r_val
 
     def get_option_id_by_index(self, index: int):
         """
@@ -179,6 +180,9 @@ class Poll:
 
     def confirm_vote_text(self, ballot_args: list):
         return "option number: " + str(ballot_args[0])
+
+    def get_csv(self):
+        return False
 
 
 class AlreadyVoted(Exception):

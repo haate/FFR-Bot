@@ -273,9 +273,12 @@ class Polls(commands.Cog):
             output = poll.get_results()
             await ctx.channel.send(text.poll_now_closed)
             csv_file_name = poll.get_csv()
-            with open(csv_file_name, mode="rb") as csv_file:
-                f = File(csv_file)
-                await ctx.channel.send(output, file=f)
+            if csv_file_name:
+                with open(csv_file_name, mode="rb") as csv_file:
+                    f = File(csv_file)
+                    await ctx.channel.send(output, file=f)
+            else:
+                await ctx.channel.send(output)
             poll.end_poll()
             self.save_one(str(ctx.channel.id))
         else:
