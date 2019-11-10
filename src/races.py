@@ -9,7 +9,8 @@ from io import StringIO
 from discord.ext import commands
 from discord.utils import get
 
-import ffrrace
+from ffrrace import Race
+
 import constants
 
 active_races = dict()
@@ -104,7 +105,7 @@ class Races(commands.Cog):
                                               name=constants.races_category),
                                  reason="bot generated channel for a race,"
                                  + " will be deleted after race finishes")
-        race = ffrrace.Race(racechannel.id, name)
+        race = Race(racechannel.id, name)
         active_races[racechannel.id] = race
         race.role = await ctx.guild.create_role(name=race.id,
                                                 reason="role for a race")
@@ -551,9 +552,14 @@ class Races(commands.Cog):
     @commands.command()
     async def stream(self, ctx):
         for player in ctx.message.mentions:
-            await ctx.channel.send(r'https://www.twitch.tv/{}'
-                                   .format(self.twitchids[str(player.id)]))
-
+            try:
+                await ctx.channel.send(r'https://www.twitch.tv/{}'
+                                       .format(self.twitchids[str(player.id)]))
+            except KeyError:
+                await ctx.channel.send(player.mention + " has not set their"
+                                       + " twitchid\nset it with the following"
+                                       + " command:\n`?twitchid "
+                                       + "your_twitch_username`")
     # Admin Commands
 
     @commands.command()
