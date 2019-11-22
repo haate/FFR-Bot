@@ -24,7 +24,7 @@ races_category = "Racing"
 race_results = "race-results"
 self_assignable_roles =\
     ["duckling", "race crew", "restreamer",
-     "Ping Me To Race", "He/Him", "She/Her",
+     "Ping Me To Race", "guinea ping", "He/Him", "She/Her",
      "They/Them"]
 self_assignable_roles_descriptions =\
     ["Optional new player role. Allows you to"
@@ -33,7 +33,11 @@ self_assignable_roles_descriptions =\
      "Role to indicate that you are equipped"
      + " to do restreams", "An optional role"
      + " for people to ping if they want to"
-     + " race.", "An optional role to let"
+     + " race.", " This role allows the dev"
+     + " team to ping individuals in the co"
+     + "mmunity to provide testing for new "
+     + " flags and features before implement"
+     + "ation. ", "An optional role to let"
      + " commentary people know to use male"
      + " pronouns for you rather than"
      + " just assuming.", "An optional role"
