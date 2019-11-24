@@ -50,6 +50,6 @@ self_assignable_roles_descriptions =\
      + " assuming."]
 
 role_requests = "role-requests"
-polls_category = "Administration"
+polls_category = "POLLS"
 voting_age_days = 14
 seat_count = 5
