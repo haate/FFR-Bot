@@ -115,3 +115,6 @@ deploy.ps1
 # vscode
 .vscode/
 *.code-workspace
+
+# vs
+.vs/

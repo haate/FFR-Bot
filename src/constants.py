@@ -23,13 +23,22 @@ call_for_races_channel = "race-organization"
 races_category = "Racing"
 race_results = "race-results"
 self_assignable_roles =\
-    ["duckling", "race crew", "restreamer",
+    ["duckling", "platypus", "race crew", "restreamer",
      "Ping Me To Race", "guinea ping", "He/Him", "She/Her",
      "They/Them"]
 self_assignable_roles_descriptions =\
     ["Optional new player role. Allows you to"
      + " participate in the weekly duckling "
-     + "seeds", "Commentary/tracking role.",
+     + "seeds",
+     "Platypus is a role designated for"
+     + " ducklings who are ready to move out"
+     + " of the pond and develop their racing"
+     + " skills. This role will be assigned" 
+     + " to ducklings who finish the Duckling"
+     + " Derby as well as other racers who"
+     + " would like to race each other and" 
+     + "develop their skills.",
+     "Commentary/tracking role.",
      "Role to indicate that you are equipped"
      + " to do restreams", "An optional role"
      + " for people to ping if they want to"
