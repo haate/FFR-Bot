@@ -24,8 +24,8 @@ races_category = "Racing"
 race_results = "race-results"
 self_assignable_roles =\
     ["duckling", "platypus", "race crew", "restreamer",
-     "Ping Me To Race", "guinea ping", "He/Him", "She/Her",
-     "They/Them"]
+     "Ping Me To Race", "spectator", "guinea ping",
+     "He/Him", "She/Her", "They/Them"]
 self_assignable_roles_descriptions =\
     ["Optional new player role. Allows you to"
      + " participate in the weekly duckling "
@@ -40,19 +40,28 @@ self_assignable_roles_descriptions =\
      + "develop their skills.",
      "Commentary/tracking role.",
      "Role to indicate that you are equipped"
-     + " to do restreams", "An optional role"
+     + " to do restreams",
+      "An optional role"
      + " for people to ping if they want to"
-     + " race.", " This role allows the dev"
+     + " race.",
+     "This role is for community members who"
+     + " would like to be notified when there"
+     + " are races, restreamed on our broadcast"
+     + " partners or through multi stream. ",
+      " This role allows the dev"
      + " team to ping individuals in the co"
      + "mmunity to provide testing for new "
      + " flags and features before implement"
-     + "ation. ", "An optional role to let"
+     + "ation. ",
+      "An optional role to let"
      + " commentary people know to use male"
      + " pronouns for you rather than"
-     + " just assuming.", "An optional role"
+     + " just assuming.",
+      "An optional role"
      + " to let commentary people know to use"
      + " female pronouns for you rather than"
-     + " just assuming.", "An optional role"
+     + " just assuming.",
+      "An optional role"
      + " to let commentary people know to use"
      + " they/them instead of female or male"
      + " pronouns for you rather than just"
