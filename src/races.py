@@ -10,6 +10,7 @@ from discord.ext import commands
 from discord.utils import get
 
 from ffrrace import Race
+import logging
 
 import constants
 
@@ -85,7 +86,11 @@ class Races(commands.Cog):
         self.loaddata()
 
     def loaddata(self):
-        self.twitchids = dict(self.redis_db.hgetall('twitchids'))
+        temp_twitchids = dict(self.redis_db.hgetall('twitchids'))
+        for k, v in temp_twitchids.items():
+            self.twitchids[k.decode('utf-8')] = v.decode('utf-8')
+        logging.info('Loading saved Twitch ids')
+        logging.debug('twitch ids:' + str(self.twitchids))
 
     @commands.command(aliases=['sr'])
     @commands.check(is_call_for_races)
@@ -545,7 +550,8 @@ class Races(commands.Cog):
     @commands.command()
     async def twitchid(self, ctx, id=''):
         self.twitchids[str(ctx.author.id)] = id
-        self.redis_db.hset('twitchids', ctx.author.id, id)
+        self.redis_db.hset('twitchids', str(
+            ctx.author.id).encode('utf-8'), id.encode('utf-8'))
         await ctx.channel.send('twitch id set to: '
                                + self.twitchids[str(ctx.author.id)])
 

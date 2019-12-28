@@ -30,17 +30,15 @@ bot = commands.Bot(command_prefix="?", description=description,
 redis_pool = redis.ConnectionPool(host=os.environ.get(
     "REDIS_HOST", "localhost"), port=int(
     os.environ.get(
-        "REDIS_PORT", "6379")))
+        "REDIS_PORT", "6379")),
+    decode_responses=False)
 
-redis_utf8 = redis.Redis(connection_pool=redis_pool,
-                         charset="utf-8",
-                         decode_responses=True)
-redis_bin = redis.StrictRedis(connection_pool=redis_pool,
-                              decode_responses=False)
+redis_races = redis.StrictRedis(connection_pool=redis_pool)
+redis_polls = redis.StrictRedis(connection_pool=redis_pool)
 
-bot.add_cog(Races(bot, redis_utf8))
+bot.add_cog(Races(bot, redis_races))
 bot.add_cog(Roles(bot))
-bot.add_cog(Polls(bot, redis_bin))
+bot.add_cog(Polls(bot, redis_polls))
 
 
 @bot.event
