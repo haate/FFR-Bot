@@ -500,7 +500,7 @@ async def whoami(ctx):
 async def roll(ctx, dice):
     match = re.match(r"((\d+)?d\d+)", dice)
     if match == None:
-        ctx.message.channel.send("Roll arguments must be in the form [N]dM ie. 3d6, d8")
+        await ctx.message.channel.send("Roll arguments must be in the form [N]dM ie. 3d6, d8")
         return
     rollargs = match.group().split('d')
     
@@ -510,7 +510,7 @@ async def roll(ctx, dice):
         rollargs[0] = 1
     result = [ceil(random() * rollargs[1]) for i in range(rollargs[0])]
     textresult = "{} result: **{}**".format(match.group(), sum(result))
-    ctx.message.channel.send(textresult)
+    await ctx.message.channel.send(textresult)
 
 @bot.command()
 async def coin(ctx):
@@ -519,7 +519,7 @@ async def coin(ctx):
         coinres = "Heads"
     else:
         coinres = "Tails"
-    ctx.message.channel.send("Coin landed on: **{}**".format(coinres))
+    await ctx.message.channel.send("Coin landed on: **{}**".format(coinres))
 
 
 
