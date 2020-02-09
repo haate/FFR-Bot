@@ -508,6 +508,7 @@ async def roll(ctx, dice):
         rollargs[0] = int(rollargs[0])
     except:
         rollargs[0] = 1
+    rollargs[1] = int(rollargs[1])
     result = [ceil(random() * rollargs[1]) for i in range(rollargs[0])]
     textresult = "{} result: **{}**".format(match.group(), sum(result))
     await ctx.message.channel.send(textresult)
