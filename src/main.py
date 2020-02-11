@@ -498,7 +498,7 @@ async def whoami(ctx):
 
 @bot.command()
 async def roll(ctx, dice):
-    match = re.match(r"((\d{1,9})?d\d{1,9})", dice)
+    match = re.match(r"((\d{1,3})?d\d{1,9})", dice)
     if match == None:
         await ctx.message.channel.send("Roll arguments must be in the form [N]dM ie. 3d6, d8")
         return
