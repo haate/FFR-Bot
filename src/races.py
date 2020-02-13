@@ -458,8 +458,7 @@ class Races(commands.Cog):
         if site:
             url += site + "."
 
-        url += "finalfantasyrandomizer.com/" + \
-            ("" if site else "Home/") + "Randomize?s=" + \
+        url += "finalfantasyrandomizer.com/" + "Randomize?s=" + \
             ("{0:-0{1}x}".format(seed, 8)) + "&f=" + flags
         return url
 
