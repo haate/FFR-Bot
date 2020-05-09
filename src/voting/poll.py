@@ -106,6 +106,13 @@ class Poll:
                 logging.error("KeyError in submit_vote")
                 pass
 
+    def remove_voter(self, id):
+        if self.check_if_voted(id):
+            del self.voters[id]
+            return True
+        else:
+            return False
+
     def update_description(self, id: str, description: str):
         try:
             self.options[id]["description"] = description

@@ -166,12 +166,21 @@ class Polls(commands.Cog):
         account_age = (datetime.now(timezone.utc) -
                        ctx.author.created_at.replace(tzinfo=timezone.utc)).days
 
+        server_join_date = ctx.author.joined_at.replace(tzinfo=timezone.utc)
+        bad_hardcoded_date = datetime.fromisoformat(
+            "2020-05-08 22:54:53.546944+00:00")
+
+        server_join_ok = server_join_date < bad_hardcoded_date
+
         if poll.check_if_voted(str(ctx.author.id)):
             await ctx.author.send(text.already_voted)
 
         elif account_age < constants.voting_age_days:
             await ctx.author.send(text.account_age(account_age,
                                                    constants.voting_age_days))
+
+        elif not server_join_ok:
+            await ctx.author.send(text.not_in_server_long_enough)
 
         elif poll.started is False:
             await ctx.channel.send(text.poll_not_started)
@@ -375,6 +384,28 @@ class Polls(commands.Cog):
         await ctx.author.send("number of ballots cast: "
                               + str(poll.get_count()))
         await ctx.message.delete()
+
+    @commands.command()
+    @commands.check(is_steven)
+    async def removevote(self, ctx, *args):
+        try:
+            poll = self.polls[str(ctx.channel.id)]
+        except KeyError:
+            await ctx.author.send(text.no_poll_in_channel)
+            await ctx.message.delete()
+            return
+
+        for user_id in args:
+            try:
+                result = poll.remove_voter(user_id)
+                if result is False:
+                    await ctx.author.send(
+                        "the user id: " + user_id + " was not found in the "
+                                                    "voter list")
+            except Exception:
+                await ctx.author.send(
+                    "the user id: " + user_id + " caused an exception")
+                continue
 
     @commands.command()
     @commands.check(is_steven)
