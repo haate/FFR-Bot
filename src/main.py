@@ -5,12 +5,14 @@ import time
 from datetime import datetime, timedelta
 from math import ceil
 from random import random
+from typing import List
 
 import os
 import redis
 
 from discord.ext import commands
 from discord.utils import get
+from discord.message import Message
 
 from races import Races
 from roles import Roles
@@ -53,7 +55,7 @@ async def on_ready():
 def is_admin(ctx):
     user = ctx.author
     return (any(role.name in constants.ADMINS for role in user.roles))\
-           or (user.id == int(140605120579764226))
+        or (user.id == int(140605120579764226))
 
 
 def allow_seed_rolling(ctx):
@@ -166,8 +168,8 @@ async def submit(ctx, runnertime: str = None):
         new_leaderboard = title + "\n\n"
         for i in range(len(leaderboard_list)):
             new_leaderboard += str(i + 1) + ")" +\
-                               leaderboard_list[i][0] + "-" +\
-                               leaderboard_list[i][1] + "\n"
+                leaderboard_list[i][0] + "-" +\
+                leaderboard_list[i][1] + "\n"
         new_leaderboard += "\nForfeits - " + str(forfeits)
 
         await leaderboard.edit(content=new_leaderboard)
@@ -211,10 +213,11 @@ async def remove(ctx):
         remove_role = get(roles, name=constants.asyncseedrole)
         participantnumchannel = get(channels, name=constants.asyncchannel)
     if role in user.roles:
-        leaderboard = channel.history(oldest_first=True, limit=100)
-        async for x in leaderboard:
+        leaderboard = await channel.history(limit=100).flatten()
+        for x in leaderboard:
             if bot.user == x.author:
                 leaderboard = x
+                break
 
         leaderboard_list = leaderboard.content.split("\n")
 
@@ -241,7 +244,7 @@ async def remove(ctx):
                 if leaderboard_list[i][0][1:len(
                         leaderboard_list[i][0]) - 1] == re.sub('[()-]', '',
                                                                player
-                                                                       .display_name):
+                                                               .display_name):
                     del leaderboard_list[i]
                     await player.remove_roles(remove_role)
                     await changeparticipants(ctx, increment=False,
@@ -256,8 +259,8 @@ async def remove(ctx):
         new_leaderboard = title + "\n\n"
         for i in range(len(leaderboard_list)):
             new_leaderboard += str(i + 1) + ")" +\
-                               leaderboard_list[i][0] + "-" +\
-                               leaderboard_list[i][1] + "\n"
+                leaderboard_list[i][0] + "-" +\
+                leaderboard_list[i][1] + "\n"
         new_leaderboard += "\nForfeits - " + str(forfeits)
 
         await leaderboard.edit(content=new_leaderboard)
@@ -413,25 +416,25 @@ async def getleaderboard(ctx):
     ducklingseed = get(channels, name=constants.ducklingchannel)
 
     if channel == challengeseed:
-        leaderboard = get(
+        leaderboard = await get(
             channels,
             name=constants.challengeseedleaderboard).history(
-            oldest_first=True,
-            limit=100)
+            limit=100).flatten()
     elif channel == asyncseed:
-        leaderboard = get(channels, name=constants.asyncleaderboard).history(
-            oldest_first=True, limit=100)
+        leaderboard = await get(channels, name=constants.asyncleaderboard)\
+            .history(limit=100).flatten()
     elif channel == ducklingseed:
-        leaderboard = get(channels,
-                          name=constants.ducklingleaderboard).history(
-            oldest_first=True, limit=100)
+        leaderboard = await get(channels,
+                                name=constants.ducklingleaderboard).history(
+            limit=100).flatten()
     else:
         await user.send("That command isn't allowed here.")
         return None
 
-    async for x in leaderboard:
+    for x in leaderboard:
         if bot.user == x.author:
             leaderboard = x
+            break
 
     return leaderboard
 
@@ -472,12 +475,13 @@ async def changeparticipants(ctx, increment=True, channel=None):
     :return: None
     """
 
-    participants = (
-        ctx.message.channel if channel is None else channel).history(
-        oldest_first=True, limit=100)
-    async for x in participants:
+    participants: List[Message] = await (
+        ctx.message.channel if channel is None else channel).\
+        history(limit=100).flatten()
+    for x in participants:
         if x.author == bot.user:
             participants = x
+            break
     num_partcipents = int(participants.content.split(":")[1])
     if increment:
         num_partcipents += 1
@@ -503,7 +507,7 @@ async def whoami(ctx):
 @bot.command()
 async def roll(ctx, dice):
     match = re.match(r"((\d{1,3})?d\d{1,9})", dice)
-    if match == None:
+    if match is None:
         await ctx.message.channel.send(
             "Roll arguments must be in the form [N]dM ie. 3d6, d8")
         return
@@ -511,7 +515,7 @@ async def roll(ctx, dice):
 
     try:
         rollargs[0] = int(rollargs[0])
-    except:
+    except BaseException:
         rollargs[0] = 1
     rollargs[1] = int(rollargs[1])
     result = [ceil(random() * rollargs[1]) for i in range(rollargs[0])]

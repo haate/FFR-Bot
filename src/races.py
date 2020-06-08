@@ -22,7 +22,7 @@ allow_races_bool = True
 
 def allow_seed_rolling(ctx):
     return (ctx.channel.name == constants.call_for_races_channel) or (
-            ctx.channel.id in active_races.keys())
+        ctx.channel.id in active_races.keys())
 
 
 def is_call_for_races(ctx):
@@ -74,7 +74,7 @@ def allow_races(ctx):
 def is_admin(ctx):
     user = ctx.author
     return (any(role.name in constants.ADMINS for role in user.roles)) or (
-            user.id == int(140605120579764226))
+        user.id == int(140605120579764226))
 
 
 class Races(commands.Cog):
@@ -379,8 +379,8 @@ class Races(commands.Cog):
                          + " has started! Join the race room with the "\
                            "following command!"\
                          + "\n?spectate " + str(
-            race.id) + "\nWatch the race at: "\
-                         + (
+                             race.id) + "\nWatch the race at: "\
+            + (
                              race.restream if race.restream is not None else
                              multi)
         await race.message.edit(content=edited_message)
@@ -542,10 +542,10 @@ class Races(commands.Cog):
             entrants = [
                 srl_json['entrants'][k]['twitch']
                 for k in srl_json['entrants'].keys() if (
-                                                                srl_json[
-                                                                    'entrants'][
-                                                                    k][
-                                                                    'statetext'] == "Ready") or all]
+                    srl_json[
+                        'entrants'][
+                        k][
+                        'statetext'] == "Ready") or all]
         except KeyError:
             return None
         entrants_2 = r'/'.join(entrants)

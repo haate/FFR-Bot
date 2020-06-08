@@ -52,8 +52,8 @@ class Poll:
             count += 1
             r_val += str(count) + ": "
             r_val += option["id"]\
-                     + ("" if name_only else " - " + option[
-                "description"]) + "\n\n"
+                + ("" if name_only else " - " + option[
+                    "description"]) + "\n\n"
         return r_val
 
     def start_poll(self):
@@ -142,7 +142,7 @@ class Poll:
             r_val += "\n" + value["id"] + ": "\
                      + str(
                 round(100 * len(value["voters"]) / len(self.voters)))\
-                     + "%   " + str(len(value["voters"])) + " votes"
+                + "%   " + str(len(value["voters"])) + " votes"
 
         r_val += "\n\nTotal votes: " + str(len(self.voters))
         return r_val

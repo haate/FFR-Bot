@@ -116,7 +116,7 @@ class StvElection(Poll):
         logging.info(str(ballot_args) + "\n" + str(ballot))
 
         for key, value in sorted(ballot.items(), key=lambda rank:
-        int(rank[0])):
+                                 int(rank[0])):
             option = self.options[value]
             ballot_text += (str(key)
                             + " | "
@@ -234,7 +234,7 @@ class StvElection(Poll):
                 if (len(
                         remaining_options -
                         options_to_remove)
-                    + len(winners)) < self.seat_count:
+                        + len(winners)) < self.seat_count:
                     tied = options_to_remove
                 else:
                     remaining_options -= options_to_remove
@@ -309,7 +309,7 @@ class StvElection(Poll):
                                     "voter's earlier option won: "
                                     + str(removed_option_key))
                                 total = count[str(round_num - 1)
-                                ][removed_option_key]["total"]
+                                              ][removed_option_key]["total"]
                                 surplus = total - quota
                                 old_weight = str(vote["weight"])
                                 vote["weight"] *= surplus / total

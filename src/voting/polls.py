@@ -15,7 +15,7 @@ from voting.stv_election import StvElection
 def is_admin(ctx):
     user = ctx.author
     return (any(role.name in constants.ADMINS for role in user.roles)) or (
-            user.id == int(140605120579764226))
+        user.id == int(140605120579764226))
 
 
 def is_steven(ctx):
@@ -103,7 +103,7 @@ class Polls(commands.Cog):
 
         if len(poll.options) < 2:
             error_text = text.not_enough_options\
-                         + poll.list_options(name_only=True)
+                + poll.list_options(name_only=True)
             await ctx.author.send(error_text)
             await ctx.message.delete()
             return
@@ -229,7 +229,7 @@ class Polls(commands.Cog):
 
             def check(m):
                 return m.author == ctx.author\
-                       and m.channel == ctx.channel
+                    and m.channel == ctx.channel
 
             reply = None
             while (reply is None
@@ -274,7 +274,7 @@ class Polls(commands.Cog):
 
         def check(m):
             return m.author == ctx.author\
-                   and m.channel == ctx.channel
+                and m.channel == ctx.channel
 
         reply = None
         while (reply is None
@@ -333,7 +333,7 @@ class Polls(commands.Cog):
 
         def check(m):
             return m.author == ctx.author\
-                   and m.channel == ctx.channel
+                and m.channel == ctx.channel
 
         reply = None
         while (reply is None
@@ -350,8 +350,8 @@ class Polls(commands.Cog):
             await ctx.channel.send("logging who deleted this poll with "
                                    + "a role create and delete")
             reason = poll.poll_id + " force deleted by: " +\
-                     ctx.author.name + "\ndisplay name: " +\
-                     ctx.author.display_name
+                ctx.author.name + "\ndisplay name: " +\
+                ctx.author.display_name
             role = await ctx.guild.create_role(name="deleted-poll",
                                                reason=reason)
             await role.delete(reason=reason)
