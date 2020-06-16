@@ -24,7 +24,7 @@ race_results = "race-results"
 self_assignable_roles =\
     ["duckling", "platypus", "race crew", "restreamer",
      "Ping Me To Race", "spectator", "guinea ping",
-     "He/Him", "She/Her", "They/Them", "IronGoler"]
+     "He/Him", "She/Her", "They/Them", "IronGoler", "co-op flag tester"]
 self_assignable_roles_descriptions =\
     ["Optional new player role. Allows you to"
      + " participate in the weekly duckling "
@@ -68,7 +68,10 @@ self_assignable_roles_descriptions =\
      "Grab this tag if you want to keep up"
      + "with all the IronGol events or if"
      + "you plan on participating in any"
-     + "IronGol Matches."]
+     + "IronGol Matches.",
+     "An optional role to signify that you"
+     + "want to receive pings to test flags"
+     + " for co-op races"]
 
 role_requests = "role-requests"
 polls_category = "Administration"
