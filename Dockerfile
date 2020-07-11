@@ -1,5 +1,6 @@
-FROM gorialis/discord.py:3.8-alpine-pypi-minimal
+FROM gorialis/discord.py:3.8.1-alpine-pypi-minimal
 RUN python -m pip install redis
+RUN python -m pip install -U discord.py
 
 WORKDIR /usr/src/app
 COPY src/ ./
