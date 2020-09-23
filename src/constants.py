@@ -19,7 +19,7 @@ asyncleaderboard = "async-leaderboard"
 asyncspoiler = "async-spoilers"
 rolerequiredduckling = 'duckling'
 call_for_races_channel = "race-organization"
-races_category = "Racing"
+races_category = "Racing Administration"
 race_results = "race-results"
 self_assignable_roles =\
     ["duckling", "platypus", "race crew", "restreamer",
