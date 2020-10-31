@@ -14,10 +14,14 @@ from discord.ext import commands
 from discord.utils import get
 from discord.message import Message
 
+import discord
+
 from races import Races
 from roles import Roles
 from voting.polls import Polls
+
 import constants
+
 
 # format logging
 logging.basicConfig(
@@ -25,10 +29,13 @@ logging.basicConfig(
     level=logging.INFO,
     datefmt="%Y-%m-%d %H:%M:%S")
 
+intents = discord.Intents.default()
+intents.members = True
+
 description = "FFR discord bot"
 
 bot = commands.Bot(command_prefix="?", description=description,
-                   case_insensitive=True)
+                   case_insensitive=True, intents=intents)
 
 redis_pool = redis.ConnectionPool(host=os.environ.get(
     "REDIS_HOST", "localhost"), port=int(
@@ -46,6 +53,7 @@ bot.add_cog(Polls(bot, redis_polls))
 
 @bot.event
 async def on_ready():
+    logging.info("discord.py version: " + discord.__version__)
     logging.info("Logged in as")
     logging.info(bot.user.name)
     logging.info(bot.user.id)
