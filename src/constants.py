@@ -1,4 +1,4 @@
-ADMINS = ["admin", "dev admin"]
+ADMINS = ["admin", "dev admin", "arbiter"]
 Sleep_Time = 5000
 ducklingchannel = 'duckling-weekly'
 ducklingleaderboard = 'duckling-leaderboard'
