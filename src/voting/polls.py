@@ -168,7 +168,7 @@ class Polls(commands.Cog):
 
         server_join_date = ctx.author.joined_at.replace(tzinfo=timezone.utc)
         bad_hardcoded_date = datetime.fromisoformat(
-            "2020-11-08 22:54:53.546944+00:00")
+            "2020-11-29 22:54:53.546944+00:00")
 
         server_join_ok = server_join_date < bad_hardcoded_date
 
