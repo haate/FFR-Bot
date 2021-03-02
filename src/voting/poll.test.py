@@ -1,5 +1,5 @@
 import unittest
-from voting.poll import Poll
+from .poll import Poll
 
 
 class TestPoll(unittest.TestCase):

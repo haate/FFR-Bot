@@ -1,6 +1,6 @@
 import math
-from voting.poll import Poll, AlreadyVoted, VoteNotOpen, VoteAlreadyClosed
-from voting.ffrvoter import FFRVoter
+from .poll import Poll, AlreadyVoted, VoteNotOpen, VoteAlreadyClosed
+from .ffrvoter import FFRVoter
 import logging
 import csv
 

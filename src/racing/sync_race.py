@@ -1,114 +1,87 @@
-from racing.ffrrace import Race
+from typing import *
 
+from .race import Race
+from .racer import Racer
+
+import asyncio
 import time
-from datetime import timedelta
-from sys import maxsize
-import redis
-import os
+import random
 
-redis_db = redis.Redis(host=os.environ.get("REDIS_HOST", "localhost"),
-                       port=int(os.environ.get("REDIS_PORT", "6379")))
+import urllib
+import urllib.request
+import json
+from io import StringIO
+
+from discord.ext import commands
+from discord.utils import get
+
+import logging
+
+from .. import constants
+
+
+class SyncRacer(Racer):
+    """
+    A class to model a racer in a synchronous race
+    """
+
+    def __init__(self, user_id: str, name: str, display_name: str) -> None:
+        super().__init__(user_id, name, display_name)
+
+        self.readied = False
+        self.time: Optional[int] = None
+        self.forfeited = False
+
+    def set_forfeited(self, is_forfeited: bool) -> None:
+        self.forfeited = is_forfeited
+
+    def get_forfeited(self) -> bool:
+        return self.forfeited
+
+    def set_readied(self, is_readied: bool) -> None:
+        self.readied = is_readied
+
+    def get_readied(self) -> bool:
+        return self.readied
+
+    def get_finished(self) -> bool:
+        return self.time is not None or self.forfeited
 
 
 class SyncRace(Race):
     """
-    A class to model a synchronous FFR race
+    A class to model a synchronous race
     """
 
-    def __init__(self, id, name=None, flags=None):
-        self.id = id
-        self.name = name
-        self.flags = flags
-        self.runners = dict()
-        self.started = False
-        self.role = None
-        self.channel = None
-        self.owner = None
-        self.readycount = 0
-        self.message = None
-        self.restream = None
+    def __init__(self, name: str, id: str) -> None:
+        self.runners: TypedDict[str, SyncRacer] = dict()
+        self.start_time: Optional[int] = None
+        self.name: str = name
+        self.id: str = id
+        self.finished: bool = False
 
-    def addRunner(self, runnerid, runner):
-        self.runners[runnerid] = dict(
-            [("name", runner), ("stime", None), ("etime", None),
-             ("ready", False)])
+    def get_started(self) -> bool:
+        return self.start_time is not None
 
-    def removeRunner(self, runnerid):
-        del self.runners[runnerid]
+    def add_runner(self, runner: SyncRacer) -> None:
+        self.runners[runner.user_id] = runner
 
-    def ready(self, runnerid):
-        if (self.runners[runnerid]["ready"]):
-            return
-        self.runners[runnerid]["ready"] = True
-        self.readycount += 1
+    def remove_runner(self, runner: SyncRacer) -> None:
+        if not self.get_started():
+            del self.runners[runner.user_id]
 
-    def unready(self, runnerid):
-        if (self.runners[runnerid]["ready"] is False):
-            return
-        self.runners[runnerid]["ready"] = False
-        self.readycount -= 1
+    def start_race(self) -> None:
+        if not self.get_started():
+            self.start_time = time.time_ns()
 
-    def start(self):
-        self.started = True
-        stime = time.perf_counter_ns()
-        for runnerid in self.runners.values():
-            runnerid["stime"] = stime
+    def forfeit_runner(self, runner: SyncRacer) -> None:
+        self.runners[runner.user_id].set_forfeited(True)
 
-    def done(self, runnerid):
-        etime = time.perf_counter_ns()
-        self.runners[runnerid]["etime"] = etime
+    def end_race(self):
+        self.finished = True
+        [runner.set_forfeited(True) for runner in self.runners.values() if
+         runner.get_finished()]
 
-        if (all(r["etime"] is not None for r in self.runners.values())):
-            return self.finishRace()
-
-        rval = timedelta(microseconds=round(
-            etime - self.runners[runnerid]["stime"], -3) // 1000)
-        return self.runners[runnerid]["name"] + ": " + str(rval)
-
-    def undone(self, runnerid):
-        self.runners[runnerid]["etime"] = None
-        return self.runners[runnerid]["name"] + " is back in the race!"
-
-    def forfeit(self, runnerid):
-        self.runners[runnerid]["etime"] = maxsize
-        if (all(r["etime"] is not None for r in self.runners.values())):
-            return self.finishRace()
-
-        return self.runners[runnerid]["name"] + " forfeited"
-
-    def getUpdate(self):
-        rval = "Current Entrants:\n"
-        for runner in self.runners.values():
-            rval += runner["name"] + " "
-            if (self.started):
-                if (runner["etime"] is maxsize):
-                    rval += "forfeited"
-                elif (runner["etime"] is not None):
-                    time = timedelta(microseconds=round(
-                        runner["etime"] - runner["stime"], -3) // 1000)
-                    rval += "done: " + str(time)
-                else:
-                    rval += "still going"
-            else:
-                rval += ("ready" if runner["ready"] else "not ready")
-            rval += "\n"
-        return rval
-
-    def getTime(self):
-        for i in self.runners.values():
-            return timedelta(microseconds=round(
-                time.perf_counter_ns() - i["stime"], -3) // 1000)
-
-    def finishRace(self):
-        rstring = "Race " + self.name + " results:\n\n"
-        place = 0
-        for runner in sorted(list(self.runners.values()),
-                             key=lambda k: k["etime"]):
-            place += 1
-            rstring += str(place) + ") " + runner["name"] + ": "
-            if (runner["etime"] is maxsize):
-                rstring += "Forfeited\n"
-            else:
-                rstring += str(timedelta(microseconds=round(
-                    runner["etime"] - runner["stime"], -3) // 1000)) + "\n"
-        return rstring
+    def check_readied(self):
+        return len([runner for runner in self.runners.values() if
+                    runner.readied is False]) == 0

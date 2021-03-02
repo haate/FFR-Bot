@@ -1,11 +1,12 @@
 import asyncio
 import logging
+
+from typing import *
 import re
 import time
 from datetime import datetime, timedelta
 from math import ceil
 from random import random
-from typing import List
 
 import os
 import redis
@@ -16,9 +17,10 @@ from discord.message import Message
 
 import discord
 
-from races import Races
+from racing.races import Races
 from roles import Roles
 from voting.polls import Polls
+from .rng import RNG
 
 import constants
 
@@ -49,6 +51,7 @@ redis_polls = redis.StrictRedis(connection_pool=redis_pool)
 bot.add_cog(Races(bot, redis_races))
 bot.add_cog(Roles(bot))
 bot.add_cog(Polls(bot, redis_polls))
+bot.add_cog(RNG(bot))
 
 
 @bot.event
@@ -512,33 +515,6 @@ async def whoami(ctx):
     await ctx.message.delete()
 
 
-@bot.command()
-async def roll(ctx, dice):
-    match = re.match(r"((\d{1,3})?d\d{1,9})", dice)
-    if match is None:
-        await ctx.message.channel.send(
-            "Roll arguments must be in the form [N]dM ie. 3d6, d8")
-        return
-    rollargs = match.group().split('d')
-
-    try:
-        rollargs[0] = int(rollargs[0])
-    except BaseException:
-        rollargs[0] = 1
-    rollargs[1] = int(rollargs[1])
-    result = [ceil(random() * rollargs[1]) for i in range(rollargs[0])]
-    textresult = "{} result: **{}**".format(match.group(), sum(result))
-    await ctx.message.channel.send(textresult)
-
-
-@bot.command()
-async def coin(ctx):
-    coinres = ""
-    if random() >= 0.5:
-        coinres = "Heads"
-    else:
-        coinres = "Tails"
-    await ctx.message.channel.send("Coin landed on: **{}**".format(coinres))
 
 
 def handle_exit(client, loop):

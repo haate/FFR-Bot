@@ -1,4 +1,4 @@
-from voting.ffrvoter import FFRVoter
+from .ffrvoter import FFRVoter
 import logging
 
 
@@ -37,7 +37,7 @@ class Poll:
     def add_option(self, ctx: any, args: list):
         id = args[0]
         description = args[1]
-        if (id in self.options):
+        if id in self.options:
             raise KeyError("That id already exists")
         else:
             self.options[id] = {"id": id,

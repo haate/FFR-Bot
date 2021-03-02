@@ -6,10 +6,10 @@ import logging
 from datetime import datetime, timezone
 from concurrent.futures import TimeoutError
 
-import constants
-import text
-from voting.poll import Poll
-from voting.stv_election import StvElection
+from .. import constants
+from .. import text
+from .poll import Poll
+from .stv_election import StvElection
 
 
 def is_admin(ctx):

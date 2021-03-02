@@ -77,3 +77,4 @@ role_requests = "role-requests"
 polls_category = "Administration"
 voting_age_days = 14
 seat_count = 5
+bot_admin_id = 140605120579764226
