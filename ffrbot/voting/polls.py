@@ -5,39 +5,32 @@ import pickle
 import logging
 from datetime import datetime, timezone
 from concurrent.futures import TimeoutError
+from ..common import checks
+from ..common.config import config
+from ..common.redis_client import RedisClient
 
-from .. import constants
-from .. import text
+from ..common import constants, text
 from .poll import Poll
 from .stv_election import StvElection
 
 
-def is_admin(ctx):
-    user = ctx.author
-    return (any(role.name in constants.ADMINS for role in user.roles)) or (
-        user.id == int(140605120579764226))
-
-
-def is_steven(ctx):
-    user = ctx.author
-    return user.id == int(140605120579764226)
-
-
 class Polls(commands.Cog):
-    def __init__(self, bot, redis_db):
+    def __init__(self, bot, db):
         self.bot = bot
-        self.redis_db = redis_db
+        self.db: RedisClient = db
         self.polls = dict()
         try:
             self.load_all()
         except Exception as e:
-            logging.error("Error loading saved voting, maybe use command"
-                          + " clear_db to wipe stored data")
+            logging.error(
+                "Error loading saved voting, maybe use command"
+                + " clear_db to wipe stored data"
+            )
             logging.exception(e)
 
     def load_all(self):
         logging.info("loading saved voting")
-        temp = dict(self.redis_db.hgetall('voting'))
+        temp = dict(self.db.raw.hgetall("voting"))
         for k, v in temp.items():
             self.polls[k.decode("utf-8")] = pickle.loads(v)
         for poll in self.polls.values():
@@ -46,40 +39,40 @@ class Polls(commands.Cog):
     def save_one(self, id):
         logging.info("saving poll " + id)
         poll = self.polls[id]
-        self.redis_db.hset("voting",
-                           id, pickle.dumps(poll,
-                                            protocol=pickle.HIGHEST_PROTOCOL))
+        self.db.raw.hset(
+            "voting", id, pickle.dumps(poll, protocol=pickle.HIGHEST_PROTOCOL)
+        )
         logging.info("saved")
         self.verify_save(id)
 
     def verify_save(self, id):
         original = self.polls[id]
-        saved = pickle.loads(self.redis_db.hget("voting", id))
+        saved = pickle.loads(self.db.raw.hget("voting", id))
         logging.debug("original: " + str(original))
         logging.debug("saved: " + str(saved))
         logging.debug(saved == original)
 
     @commands.command()
-    @commands.check(is_steven)
+    @checks.is_bot_admin()
     async def clear_db(self, ctx):
-        self.redis_db.flushall()
+        self.db.raw.flushall()
         logging.info("cleared redis db")
         self.polls = dict()
 
     @commands.command(aliases=["cp"])
-    @commands.check(is_admin)
+    @checks.is_admin()
     async def createpoll(self, ctx, poll_type, *, name=None):
         if name is None:
             await ctx.author.send("you didnt set a name for your poll")
             return
 
-        pollchannel = await ctx.guild\
-            .create_text_channel(name,
-                                 category=get(ctx.guild.categories,
-                                              name=constants.polls_category),
-                                 reason="bot generated channel for a poll,"
-                                        + " will be deleted after poll "
-                                          "finishes")
+        pollchannel = await ctx.guild.create_text_channel(
+            name,
+            category=get(ctx.guild.categories, name=constants.polls_category),
+            reason="bot generated channel for a poll,"
+            + " will be deleted after poll "
+            "finishes",
+        )
 
         if poll_type == "poll":
             poll = Poll(name, str(pollchannel.id))
@@ -92,7 +85,7 @@ class Polls(commands.Cog):
         self.save_one(str(pollchannel.id))
 
     @commands.command(aliases=["sp"])
-    @commands.check(is_admin)
+    @checks.is_admin()
     async def startpoll(self, ctx):
         try:
             poll = self.polls[str(ctx.channel.id)]
@@ -102,8 +95,9 @@ class Polls(commands.Cog):
             return
 
         if len(poll.options) < 2:
-            error_text = text.not_enough_options\
-                + poll.list_options(name_only=True)
+            error_text = text.not_enough_options + poll.list_options(
+                name_only=True
+            )
             await ctx.author.send(error_text)
             await ctx.message.delete()
             return
@@ -117,15 +111,16 @@ class Polls(commands.Cog):
             return
 
         poll.start_poll()
-        output = "this poll is now open!\nThe following options are avalible"\
-                 + ", use `?vote` in this channel to vote, you will recieve "\
-                   "a PM "\
-                 + "from FFRBot" + "\n\nOptions:\n\n" + poll.list_options()
+        output = (
+            "this poll is now open!\nThe following options are avalible"
+            + ", use `?vote` in this channel to vote, you will recieve "
+            "a PM " + "from FFRBot" + "\n\nOptions:\n\n" + poll.list_options()
+        )
         await ctx.channel.send(output)
         self.save_one(str(ctx.channel.id))
 
     @commands.command(aliases=["ao"])
-    @commands.check(is_admin)
+    @checks.is_admin()
     async def addoption(self, ctx, *args):
         try:
             poll = self.polls[str(ctx.channel.id)]
@@ -151,7 +146,7 @@ class Polls(commands.Cog):
             return
 
         self.save_one(str(ctx.channel.id))
-        await ctx.message.add_reaction('✔')
+        await ctx.message.add_reaction("✔")
 
     @commands.command(aliases=["v"])
     async def vote(self, ctx):
@@ -163,12 +158,15 @@ class Polls(commands.Cog):
             await ctx.message.delete()
             return
 
-        account_age = (datetime.now(timezone.utc) -
-                       ctx.author.created_at.replace(tzinfo=timezone.utc)).days
+        account_age = (
+            datetime.now(timezone.utc)
+            - ctx.author.created_at.replace(tzinfo=timezone.utc)
+        ).days
 
         server_join_date = ctx.author.joined_at.replace(tzinfo=timezone.utc)
         bad_hardcoded_date = datetime.fromisoformat(
-            "2020-11-29 22:54:53.546944+00:00")
+            "2020-11-29 22:54:53.546944+00:00"
+        )
 
         server_join_ok = server_join_date < bad_hardcoded_date
 
@@ -176,8 +174,9 @@ class Polls(commands.Cog):
             await ctx.author.send(text.already_voted)
 
         elif account_age < constants.voting_age_days:
-            await ctx.author.send(text.account_age(account_age,
-                                                   constants.voting_age_days))
+            await ctx.author.send(
+                text.account_age(account_age, constants.voting_age_days)
+            )
 
         elif not server_join_ok:
             await ctx.author.send(text.not_in_server_long_enough)
@@ -203,15 +202,18 @@ class Polls(commands.Cog):
             await ctx.author.send(text.cant_find_poll)
             return
 
-        account_age = (datetime.now(timezone.utc) -
-                       ctx.author.created_at.replace(tzinfo=timezone.utc)).days
+        account_age = (
+            datetime.now(timezone.utc)
+            - ctx.author.created_at.replace(tzinfo=timezone.utc)
+        ).days
 
         if poll.check_if_voted(str(ctx.author.id)):
             await ctx.author.send(text.already_voted)
 
         elif account_age < constants.voting_age_days:
-            await ctx.author.send(text.account_age(account_age,
-                                                   constants.voting_age_days))
+            await ctx.author.send(
+                text.account_age(account_age, constants.voting_age_days)
+            )
 
         elif poll.started is False:
             await ctx.channel.send(text.poll_not_started)
@@ -223,22 +225,21 @@ class Polls(commands.Cog):
             await ctx.author.send("bad ballot")
 
         else:
-            await ctx.author.send(text.confirm_vote
-                                  + "\n"
-                                  + poll.confirm_vote_text(args))
+            await ctx.author.send(
+                text.confirm_vote + "\n" + poll.confirm_vote_text(args)
+            )
 
             def check(m):
-                return m.author == ctx.author\
-                    and m.channel == ctx.channel
+                return m.author == ctx.author and m.channel == ctx.channel
 
             reply = None
-            while (reply is None
-                   or not (reply.content.lower() == "yes"
-                           or reply.content.lower() == "no")):
+            while reply is None or not (
+                reply.content.lower() == "yes" or reply.content.lower() == "no"
+            ):
                 try:
-                    reply = await self.bot.wait_for('message',
-                                                    timeout=120,
-                                                    check=check)
+                    reply = await self.bot.wait_for(
+                        "message", timeout=120, check=check
+                    )
                 except TimeoutError:
                     await ctx.author.send(text.timeout)
                     return
@@ -252,7 +253,7 @@ class Polls(commands.Cog):
                 return
 
     @commands.command(aliases=["ep"])
-    @commands.check(is_admin)
+    @checks.is_admin()
     async def endpoll(self, ctx, channel_id=None):
         try:
             poll = self.polls[str(ctx.channel.id)]
@@ -273,17 +274,16 @@ class Polls(commands.Cog):
         await ctx.channel.send(text.confirm_end_poll)
 
         def check(m):
-            return m.author == ctx.author\
-                and m.channel == ctx.channel
+            return m.author == ctx.author and m.channel == ctx.channel
 
         reply = None
-        while (reply is None
-               or not (reply.content.lower() == "yes"
-                       or reply.content.lower() == "no")):
+        while reply is None or not (
+            reply.content.lower() == "yes" or reply.content.lower() == "no"
+        ):
             try:
-                reply = await self.bot.wait_for('message',
-                                                timeout=120,
-                                                check=check)
+                reply = await self.bot.wait_for(
+                    "message", timeout=120, check=check
+                )
             except TimeoutError:
                 await ctx.channel.send(text.timeout)
                 return
@@ -304,7 +304,7 @@ class Polls(commands.Cog):
             return
 
     @commands.command()
-    @commands.check(is_admin)
+    @checks.is_admin()
     async def undoendpoll(self, ctx):
         try:
             poll = self.polls[str(ctx.channel.id)]
@@ -319,7 +319,7 @@ class Polls(commands.Cog):
             return
 
     @commands.command()
-    @commands.check(is_admin)
+    @checks.is_admin()
     async def forceclosepoll(self, ctx):
         try:
             poll = self.polls[str(ctx.channel.id)]
@@ -328,39 +328,46 @@ class Polls(commands.Cog):
             await ctx.message.delete()
             return
 
-        await ctx.channel.send("reply `yes` to forcibly end this poll, "
-                               + "or reply `no` to stop")
+        await ctx.channel.send(
+            "reply `yes` to forcibly end this poll, " + "or reply `no` to stop"
+        )
 
         def check(m):
-            return m.author == ctx.author\
-                and m.channel == ctx.channel
+            return m.author == ctx.author and m.channel == ctx.channel
 
         reply = None
-        while (reply is None
-               or not (reply.content.lower() == "yes"
-                       or reply.content.lower() == "no")):
+        while reply is None or not (
+            reply.content.lower() == "yes" or reply.content.lower() == "no"
+        ):
             try:
-                reply = await self.bot.wait_for('message',
-                                                timeout=120,
-                                                check=check)
+                reply = await self.bot.wait_for(
+                    "message", timeout=120, check=check
+                )
             except TimeoutError:
                 await ctx.channel.send(text.timeout)
                 return
         if reply.content.lower() == "yes":
-            await ctx.channel.send("logging who deleted this poll with "
-                                   + "a role create and delete")
-            reason = poll.poll_id + " force deleted by: " +\
-                ctx.author.name + "\ndisplay name: " +\
-                ctx.author.display_name
-            role = await ctx.guild.create_role(name="deleted-poll",
-                                               reason=reason)
+            await ctx.channel.send(
+                "logging who deleted this poll with "
+                + "a role create and delete"
+            )
+            reason = (
+                poll.poll_id
+                + " force deleted by: "
+                + ctx.author.name
+                + "\ndisplay name: "
+                + ctx.author.display_name
+            )
+            role = await ctx.guild.create_role(
+                name="deleted-poll", reason=reason
+            )
             await role.delete(reason=reason)
             poll.end_poll()
             self.save_one(poll.get_channel())
-            await ctx.message.add_reaction('✔')
+            await ctx.message.add_reaction("✔")
 
     @commands.command()
-    @commands.check(is_admin)
+    @checks.is_admin()
     async def getcsv(self, ctx):
         try:
             poll = self.polls[str(ctx.channel.id)]
@@ -381,13 +388,22 @@ class Polls(commands.Cog):
             await ctx.author.send(text.no_poll_in_channel)
             await ctx.message.delete()
             return
-        await ctx.author.send("number of ballots cast: "
-                              + str(poll.get_count()))
+        await ctx.author.send(
+            "number of ballots cast: " + str(poll.get_count())
+        )
         await ctx.message.delete()
 
     @commands.command()
-    @commands.check(is_steven)
+    @checks.is_bot_admin()
     async def removevote(self, ctx, *args):
+        """
+        Removes the the ballots for all user_ids in this message
+
+        Useful to remove proven fake voters
+
+        Must be used in the poll channel and does not delete the message if
+        a valid poll is found for transparency's sake.
+        """
         try:
             poll = self.polls[str(ctx.channel.id)]
         except KeyError:
@@ -401,17 +417,19 @@ class Polls(commands.Cog):
                 if result is False:
                     await ctx.author.send(
                         "the user id: " + user_id + " was not found in the "
-                                                    "voter list")
+                        "voter list"
+                    )
             except Exception:
                 await ctx.author.send(
-                    "the user id: " + user_id + " caused an exception")
+                    "the user id: " + user_id + " caused an exception"
+                )
                 continue
 
     @commands.command()
-    @commands.check(is_steven)
+    @checks.is_bot_admin()
     async def check(self, ctx, pollid=None):
         try:
-            if (pollid):
+            if pollid:
                 poll = self.polls[str(pollid)]
             else:
                 poll = self.polls[str(ctx.channel.id)]
@@ -430,10 +448,10 @@ class Polls(commands.Cog):
             await ctx.message.delete()
 
     @commands.command()
-    @commands.check(is_steven)
+    @checks.is_bot_admin()
     async def check2(self, ctx, pollid=None):
         try:
-            if (pollid):
+            if pollid:
                 poll = self.polls[str(pollid)]
             else:
                 poll = self.polls[str(ctx.channel.id)]

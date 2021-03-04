@@ -3,22 +3,6 @@ from typing import *
 from .race import Race
 from .racer import Racer
 
-import asyncio
-import time
-import random
-
-import urllib
-import urllib.request
-import json
-from io import StringIO
-
-from discord.ext import commands
-from discord.utils import get
-
-import logging
-
-from .. import constants
-
 
 class AsyncRacer(Racer):
     """
@@ -71,5 +55,8 @@ class AsyncRace(Race):
 
     def end_race(self):
         self.finished = True
-        [runner.set_forfeited(True) for runner in self.runners.values() if
-         runner.get_finished()]
+        [
+            runner.set_forfeited(True)
+            for runner in self.runners.values()
+            if runner.get_finished()
+        ]

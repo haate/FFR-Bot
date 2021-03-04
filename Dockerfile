@@ -3,8 +3,8 @@ RUN python -m pip install redis
 RUN python -m pip install -U discord.py
 
 WORKDIR /usr/src/app
-COPY src/ ./
-COPY token.txt .
+COPY ffrbot ./ffrbot
+COPY token.txt ./ffrbot/token.txt
 
-CMD ["python", "./main.py"]
+CMD ["python", "-m", "ffrbot.main.py"]
 

@@ -3,21 +3,7 @@ from typing import *
 from .race import Race
 from .racer import Racer
 
-import asyncio
 import time
-import random
-
-import urllib
-import urllib.request
-import json
-from io import StringIO
-
-from discord.ext import commands
-from discord.utils import get
-
-import logging
-
-from .. import constants
 
 
 class SyncRacer(Racer):
@@ -53,35 +39,48 @@ class SyncRace(Race):
     A class to model a synchronous race
     """
 
-    def __init__(self, name: str, id: str) -> None:
-        self.runners: TypedDict[str, SyncRacer] = dict()
-        self.start_time: Optional[int] = None
-        self.name: str = name
-        self.id: str = id
-        self.finished: bool = False
+    def __init__(self, name: str, race_id: str) -> None:
+        super().__init__()
+        self._runners: TypedDict[str, SyncRacer] = dict()
+        self._start_time: Optional[int] = None
+        self._name: str = name
+        self._id: str = race_id
+        self._finished: bool = False
 
-    def get_started(self) -> bool:
-        return self.start_time is not None
+    @property
+    def started(self) -> bool:
+        return self._start_time is not None
 
     def add_runner(self, runner: SyncRacer) -> None:
         self.runners[runner.user_id] = runner
 
     def remove_runner(self, runner: SyncRacer) -> None:
-        if not self.get_started():
+        if not self.started:
             del self.runners[runner.user_id]
 
     def start_race(self) -> None:
-        if not self.get_started():
-            self.start_time = time.time_ns()
+        if not self.started:
+            self._start_time = time.time_ns()
 
     def forfeit_runner(self, runner: SyncRacer) -> None:
         self.runners[runner.user_id].set_forfeited(True)
 
     def end_race(self):
         self.finished = True
-        [runner.set_forfeited(True) for runner in self.runners.values() if
-         runner.get_finished()]
+        [
+            runner.set_forfeited(True)
+            for runner in self.runners.values()
+            if runner.get_finished()
+        ]
 
     def check_readied(self):
-        return len([runner for runner in self.runners.values() if
-                    runner.readied is False]) == 0
+        return (
+            len(
+                [
+                    runner
+                    for runner in self.runners.values()
+                    if runner.readied is False
+                ]
+            )
+            == 0
+        )
