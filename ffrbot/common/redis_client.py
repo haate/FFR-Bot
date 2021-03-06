@@ -10,6 +10,8 @@ from enum import Enum, unique
 class Namespace(Enum):
     ADMIN_CONFIG = "admin_config"
     RACE_CONFIG = "race_config"
+    USER_CONFIG = "user_config"
+    ROLE_CONFIG = "role_config"
 
 
 @unique
@@ -23,18 +25,49 @@ class AdminKeys(Enum):
 class RaceKeys(Enum):
     ORG_CHANNEL_ID = "org_channel_id"
     RESULTS_CHANNEL_ID = "results_channel_id"
+    SYNC_RACES = "sync_races"
+    ASYNC_RACES = "async_races"
 
 
-Keys = Union[AdminKeys, RaceKeys]
+@unique
+class UserKeys(Enum):
+    TWITCH_IDS = "twitchids"
+    DISCORD_IDS = "discord_ids"
+    DISPLAY_NAMES = "display_names"
+    NAMES = "names"
 
 
-def check_namespace_and_key(namespace: Namespace, key: Keys):
-    if namespace is Namespace.ADMIN_CONFIG:
-        assert key in AdminKeys
-    elif namespace is Namespace.RACE_CONFIG:
-        assert key in RaceKeys
-    else:
-        raise Exception
+@unique
+class RoleKeys(Enum):
+    SELF_ASSIGNABLE_ROLE_IDS = "self_assignable_role_ids"
+    SELF_ASSIGNABLE_ROLE_DESCRIPTIONS = "self_assignable_role_descriptions"
+    SELF_ASSIGNABLE_ROLE_NAMES = "self_assignable_role_names"
+
+
+Keys = Union[AdminKeys, RaceKeys, UserKeys, RoleKeys]
+
+
+def check_namespace_and_key(
+    namespace: Namespace, key: Union[Keys, List[Keys]]
+):
+    def check(n, m):
+        if n is Namespace.ADMIN_CONFIG:
+            assert m in AdminKeys
+        elif n is Namespace.RACE_CONFIG:
+            assert m in RaceKeys
+        elif n is Namespace.ROLE_CONFIG:
+            assert m in RoleKeys
+        elif n in Namespace.USER_CONFIG:
+            assert m in UserKeys
+        else:
+            logging.error("Missing Namespace in check_namespace_and_key")
+            raise Exception
+
+    check(namespace, key)
+
+
+def join(namespace, key) -> str:
+    return str(namespace) + "_" + str(key)
 
 
 class RedisClient:
@@ -48,42 +81,56 @@ class RedisClient:
         logging.info(db.info())
         self.__db = db
 
-    def set_str(self, namespace: Namespace, key: Keys, value: str) -> None:
+    def set_str(
+        self, namespace: Namespace, key: Union[Keys, List[Keys]], value: str
+    ) -> None:
         check_namespace_and_key(namespace, key)
-        self.__db.set(str(namespace) + str(key), value)
+        self.__db.set(join(namespace, key), value)
 
     def get_str(self, namespace: Namespace, key: Keys) -> Optional[str]:
         check_namespace_and_key(namespace, key)
-        return self.__db.get(str(namespace) + str(key))
+        return self.__db.get(join(namespace, key)).decode("utf-8")
 
     def set_obj(self, namespace: Namespace, key: Keys, value: object) -> None:
         check_namespace_and_key(namespace, key)
         self.__db.set(
-            str(namespace) + str(key),
+            join(namespace, key),
             pickle.dumps(value, protocol=pickle.HIGHEST_PROTOCOL),
         )
 
     def get_obj(self, namespace: Namespace, key: Keys) -> Optional[object]:
         check_namespace_and_key(namespace, key)
-        return pickle.loads(self.__db.get(str(namespace) + str(key)))
+        return pickle.loads(self.__db.get(join(namespace, key)))
 
     def set_str_dict(
         self, namespace: Namespace, key: Keys, value: Dict[str, str]
     ) -> None:
         check_namespace_and_key(namespace, key)
         for k, v in value.items():
-            self.__db.hset(str(namespace) + str(key), k, v)
+            self.__db.hset(join(namespace, key), k, v)
 
     def get_str_dict(
         self, namespace: Namespace, key: Keys
     ) -> Optional[Dict[str, str]]:
         check_namespace_and_key(namespace, key)
-        k_v_pairs = self.__db.hgetall(str(namespace) + str(key))
+        k_v_pairs = self.__db.hgetall(join(namespace, key))
         if k_v_pairs is not None:
             return_value = dict()
             for k, v in k_v_pairs.items():
                 return_value[k.decode("utf-8")] = v.decode("utf-8")
             return return_value
+
+    def set_str_dict_item(
+        self, namespace: Namespace, key: Keys, item_key: str, value: str
+    ) -> None:
+        check_namespace_and_key(namespace, key)
+        self.__db.hset(join(namespace, key), item_key, value)
+
+    def get_str_dict_item(
+        self, namespace: Namespace, key: Keys, item_key: str
+    ) -> str:
+        check_namespace_and_key(namespace, key)
+        return self.__db.hget(join(namespace, key), item_key)
 
     def set_obj_dict(
         self, namespace: Namespace, key: Keys, value: Dict[str, Any]
@@ -91,7 +138,7 @@ class RedisClient:
         check_namespace_and_key(namespace, key)
         for k, v in value.items():
             self.__db.hset(
-                str(namespace) + str(key),
+                join(namespace, key),
                 k,
                 pickle.dumps(v, protocol=pickle.HIGHEST_PROTOCOL),
             )
@@ -100,7 +147,7 @@ class RedisClient:
         self, namespace: Namespace, key: Keys
     ) -> Optional[Dict[str, Any]]:
         check_namespace_and_key(namespace, key)
-        k_v_pairs = self.__db.hgetall(str(namespace) + str(key))
+        k_v_pairs = self.__db.hgetall(join(namespace, key))
         if k_v_pairs is not None:
             return_value = dict()
             for k, v in k_v_pairs.items():
@@ -111,16 +158,17 @@ class RedisClient:
         self, namespace: Namespace, key: Keys, new: Iterable[str]
     ) -> None:
         check_namespace_and_key(namespace, key)
-        current = self.__db.smembers(str(namespace) + str(key))
-
+        current = self.__db.smembers(join(namespace, key))
         to_remove = [x for x in current if x not in new]
         to_add = [x for x in new if x not in current]
-        [self.__db.srem(str(namespace) + str(key), x) for x in to_remove]
-        [self.__db.sadd(str(namespace) + str(key), x) for x in to_add]
+        logging.warning(str(to_remove))
+        logging.warning(str(to_add))
+        [self.__db.srem(join(namespace, key), x) for x in to_remove]
+        [self.__db.sadd(join(namespace, key), x) for x in to_add]
 
     def get_set(self, namespace: Namespace, key: Keys) -> Optional[Set[str]]:
         check_namespace_and_key(namespace, key)
-        return self.__db.smembers(str(namespace) + str(key))
+        return self.__db.smembers(join(namespace, key))
 
     @property
     def raw(self) -> redis.Redis:

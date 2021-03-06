@@ -4,20 +4,22 @@ from typing import *
 import redis
 
 from discord.ext import commands
-from ..common import checks
-from ..common.config import config
+
+# from ..common import checks
+from ..common import config
 import logging
 
-from ..common import constants
+# from ..common import constants
 from .sync_race import SyncRace
 from .async_race import AsyncRace
+from ..common.redis_client import RedisClient, Namespace, RaceKeys
 from .race import Race
 
 allow_races_bool: bool = True
 
 
 def is_race_channel(ctx):
-    return ctx.channel.name == config.race_org_channel_id
+    return ctx.channel.name == config.get_race_org_channel_id()
 
 
 def allow_races(ctx):
@@ -27,19 +29,19 @@ def allow_races(ctx):
 class Races(commands.Cog):
     def __init__(self, bot, db):
         self.bot: commands.Bot = bot
-        self.db: redis.StrictRedis = db
+        self.db: RedisClient = db
         self.sync_races: TypedDict[str, SyncRace] = dict()
         self.async_races: TypedDict[str, AsyncRace] = dict()
         self.twitch_ids: TypedDict[str, str] = dict()
 
     def load_data(self) -> None:
-        temp_sync_races = dict(self.db.hget("sync_races"))
-        for k, v in temp_sync_races.items():
-            self.sync_races[k.decode("utf-8")] = pickle.loads(v)
+        temp_sync_races = self.db.get_obj_dict(
+            Namespace.RACE_CONFIG, RaceKeys.SYNC_RACES
+        )
 
-        temp_async_races = dict(self.db.hget("async_races"))
-        for k, v in temp_async_races.items():
-            self.async_races[k.decode("utf-8")] = pickle.loads(v)
+        temp_async_races = self.db.get_obj_dict(
+            Namespace.RACE_CONFIG, RaceKeys.ASYNC_RACES
+        )
 
         temp_twitch_ids = dict(self.db.hgetall("twitchids"))
         for k, v in temp_twitch_ids.items():

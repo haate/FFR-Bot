@@ -19,7 +19,7 @@ class Race(ABC):
         return self._name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str):
         self._name = value
 
     @property
@@ -27,8 +27,16 @@ class Race(ABC):
         return self._finished
 
     @finished.setter
-    def finished(self, value):
+    def finished(self, value: bool):
         self._finished = value
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @id.setter
+    def id(self, value: str):
+        self._id = value
 
     @property
     def runners(self) -> Dict[str, Racer]:

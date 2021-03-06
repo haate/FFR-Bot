@@ -1,10 +1,9 @@
-attrs==20.1.0
-idna==2.10
-multidict==4.7.6
-yarl==1.5.1
-aiohttp==3.6.2
+attrs==20.3.0
+idna==3.1
+multidict==5.1.0
+yarl==1.6.3
+aiohttp==3.7.4
 chardet==3.0.4
-pymongo==3.11.0
-discord.py==1.5.1
+discord.py==1.6.0
 redis~=3.5.3
 watchdog~=2.0.2

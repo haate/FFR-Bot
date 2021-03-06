@@ -12,7 +12,8 @@ from .roles import Roles
 from .voting.polls import Polls
 from .rng import RNG
 from .core.core import Core
-from .common.config import init_config, ConfigCommands
+from .common.config_commands import ConfigCommands
+from .common import config
 from .common.redis_client import RedisClient
 
 
@@ -25,7 +26,7 @@ def main():
     )
 
     db = RedisClient()
-    init_config(db)
+    config.init(db)
 
     intents = discord.Intents.default()
     intents.members = True
@@ -41,7 +42,7 @@ def main():
 
     bot.add_cog(Core(bot))
     bot.add_cog(Races(bot, db))
-    bot.add_cog(Roles(bot))
+    bot.add_cog(Roles(bot, db))
     bot.add_cog(Polls(bot, db))
     bot.add_cog(RNG(bot))
     bot.add_cog(ConfigCommands(bot))

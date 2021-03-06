@@ -5,8 +5,7 @@ import pickle
 import logging
 from datetime import datetime, timezone
 from concurrent.futures import TimeoutError
-from ..common import checks
-from ..common.config import config
+from ..common import checks, config
 from ..common.redis_client import RedisClient
 
 from ..common import constants, text

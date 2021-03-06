@@ -1,6 +1,5 @@
 from discord.ext import commands
-from .config import config
-from . import constants
+from . import config, constants
 
 
 def is_admin():
@@ -12,7 +11,7 @@ def is_admin():
     def predicate(ctx):
         user = ctx.author
         return (
-            any(role.id in config.admin_role_ids for role in user.roles)
+            any(role.id in config.get_admin_role_ids() for role in user.roles)
             or user.id == constants.bot_admin_id
         )
 

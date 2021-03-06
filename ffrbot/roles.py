@@ -1,17 +1,24 @@
 from discord.ext import commands
-from .common.config import config
+
+import discord
+from .common.snippits import wait_for_yes_no
+import logging
+from typing import *
+from .common import config, checks, text
+from .common.redis_client import RedisClient, Namespace, RoleKeys
 from discord.utils import get
 
 from .common import constants
 
 
 def is_role_requests_channel(ctx):
-    return ctx.channel.id == config.role_requests_channel_id
+    return str(ctx.channel.id) == config.get_role_requests_channel_id()
 
 
 class Roles(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot, db):
         self.bot = bot
+        self.db: RedisClient = db
 
     @commands.command()
     @commands.check(is_role_requests_channel)
@@ -72,21 +79,82 @@ class Roles(commands.Cog):
             await ctx.author.remove_roles(role_obj)
 
     @commands.command()
-    @commands.check(is_role_requests_channel)
-    async def listroles(self, ctx):
-        await ctx.author.send(
-            "Self assignable roles:\n\n"
-            + "\n\n".join(
-                [
-                    x[0] + ": " + x[1]
-                    for x in zip(
-                        constants.self_assignable_roles,
-                        constants.self_assignable_roles_descriptions,
-                    )
-                ]
+    @checks.is_admin()
+    async def add_self_assignable_role(self, ctx: commands.Context, *args):
+
+        msg: discord.Message = ctx.message
+        guild: discord.Guild = ctx.guild
+        descriptions: List[str] = []
+        roles: List[discord.Role] = []
+
+        for i in range(len(args) // 2):
+            role_name = args[i]
+            role = [role for role in guild.roles if role.name == role_name][0]
+            if role is None:
+                await ctx.author.send(
+                    'could not find the role named: "' + role_name + '"'
+                )
+                ctx.message.delete()
+                raise Exception("couldn't find role name: " + role_name)
+            roles.append(role)
+            descriptions.append(args[i + 1])
+
+            async def add_roles():
+                self.db.set_set(
+                    Namespace.ROLE_CONFIG,
+                    RoleKeys.SELF_ASSIGNABLE_ROLE_IDS,
+                    [x.id for x in roles],
+                )
+                self.db.set_str_dict(
+                    Namespace.ROLE_CONFIG,
+                    RoleKeys.SELF_ASSIGNABLE_ROLE_NAMES,
+                    dict([(x.id, x.name) for x in roles]),
+                )
+                self.db.set_str_dict(
+                    Namespace.ROLE_CONFIG,
+                    RoleKeys.SELF_ASSIGNABLE_ROLE_DESCRIPTIONS,
+                    dict([(descriptions,
+                )
+                await ctx.channel.send(text.roles_added)
+
+            async def no_change():
+                await ctx.channel.send(text.roles_not_added)
+
+            question = text.roles_look_ok + "\n"
+
+            for j in range(len(roles)):
+                role = roles[j]
+                description = descriptions[j]
+                question += (
+                    "\nname: " + role.name + ", description: " + description
+                )
+
+            await wait_for_yes_no(
+                self.bot, ctx, question, add_roles, no_change
             )
-            + "\n\n\nCommands:\n\n use ?addrole"
-            + ' "rolename" in role-requests'
-            + " to add yourself to a role, or you can"
-            + '\n\n use ?removerole "rolename" to remove it.'
+
+    @commands.command()
+    @commands.check(is_role_requests_channel)
+    async def list_roles(self, ctx):
+        role_ids: Set[str] = self.db.get_set(
+            Namespace.ROLE_CONFIG, RoleKeys.SELF_ASSIGNABLE_ROLE_IDS
         )
+        logging.warning("role stuff: " + str(role_ids))
+
+        descriptions: Dict[str, str] = self.db.get_str_dict(
+            Namespace.ROLE_CONFIG, RoleKeys.SELF_ASSIGNABLE_ROLE_DESCRIPTIONS
+        )
+
+        names: Dict[str, str] = self.db.get_str_dict(
+            Namespace.ROLE_CONFIG, RoleKeys.SELF_ASSIGNABLE_ROLE_NAMES
+        )
+
+        embed = discord.Embed(
+            title="Self-Assignable Roles",
+            description="Lists self assignable roles and their descriptions",
+        )
+
+        for role_id in role_ids:
+            embed.add_field(
+                name=names[role_id], value=descriptions[role_id], inline=False
+            )

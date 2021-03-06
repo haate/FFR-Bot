@@ -25,15 +25,15 @@ class Event(LoggingEventHandler):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)-8s %(message)s",
+        level=logging.INFO,
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     bot_process: Optional[multiprocessing.Process] = multiprocessing.Process(
         target=bot.main, daemon=True
     )
     bot_process.start()
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
     path = sys.argv[1] if len(sys.argv) > 1 else "./ffrbot"
     event_handler = Event(bot_process)
     observer = Observer()

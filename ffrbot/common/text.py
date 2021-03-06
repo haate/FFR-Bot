@@ -46,6 +46,13 @@ poll_still_open = "the poll is still open."
 
 
 category_not_found = "The bot could not find the category for this channel."
+self_assignable_roles_message = "Self As"
+roles_added = "Self-Assignable roles added"
+roles_not_added = "Self-Assignable roles not added"
+roles_look_ok = (
+    "Do the following self assignable roles look correct? Reply "
+    'with "yes" or "no"'
+)
 
 
 def account_age(user_age, required_age):
