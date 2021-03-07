@@ -35,7 +35,6 @@ def get_role_requests_channel_id() -> str:
         __db.get_str(Namespace.ADMIN_CONFIG, AdminKeys.ROLE_REQUESTS_CHANNEL)
         or ""
     )
-    logging.warning("find me " + r_val)
     return r_val
 
 

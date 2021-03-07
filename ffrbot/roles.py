@@ -20,7 +20,7 @@ class Roles(commands.Cog):
         self.bot = bot
         self.db: RedisClient = db
 
-    @commands.command()
+    @commands.command(aliases=["ar"])
     @commands.check(is_role_requests_channel)
     async def addrole(self, ctx, *, role=None):
         if role is None:
@@ -49,7 +49,7 @@ class Roles(commands.Cog):
             )
             await ctx.author.add_roles(role_obj)
 
-    @commands.command()
+    @commands.command(aliases=["rr"])
     @commands.check(is_role_requests_channel)
     async def removerole(self, ctx, *, role=None):
         if role is None:
@@ -78,7 +78,7 @@ class Roles(commands.Cog):
             )
             await ctx.author.remove_roles(role_obj)
 
-    @commands.command()
+    @commands.command(aliases=["asar"])
     @checks.is_admin()
     async def add_self_assignable_role(self, ctx: commands.Context, *args):
 
@@ -97,6 +97,7 @@ class Roles(commands.Cog):
                 ctx.message.delete()
                 raise Exception("couldn't find role name: " + role_name)
             roles.append(role)
+
             descriptions.append(args[i + 1])
 
             async def add_roles():
@@ -113,7 +114,7 @@ class Roles(commands.Cog):
                 self.db.set_str_dict(
                     Namespace.ROLE_CONFIG,
                     RoleKeys.SELF_ASSIGNABLE_ROLE_DESCRIPTIONS,
-                    dict([(descriptions,
+                    dict(zip(role.id, description)),
                 )
                 await ctx.channel.send(text.roles_added)
 
@@ -122,6 +123,7 @@ class Roles(commands.Cog):
 
             question = text.roles_look_ok + "\n"
 
+            logging.warning("find me")
             for j in range(len(roles)):
                 role = roles[j]
                 description = descriptions[j]
@@ -133,7 +135,7 @@ class Roles(commands.Cog):
                 self.bot, ctx, question, add_roles, no_change
             )
 
-    @commands.command()
+    @commands.command(aliases=["lr"])
     @commands.check(is_role_requests_channel)
     async def list_roles(self, ctx):
         role_ids: Set[str] = self.db.get_set(
