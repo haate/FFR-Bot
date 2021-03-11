@@ -89,7 +89,10 @@ class RedisClient:
 
     def get_str(self, namespace: Namespace, key: Keys) -> Optional[str]:
         check_namespace_and_key(namespace, key)
-        return self.__db.get(join(namespace, key)).decode("utf-8")
+        string_bytes: Optional[bytes] = self.__db.get(join(namespace, key))
+        return (
+            string_bytes.decode("utf-8") if string_bytes is not None else None
+        )
 
     def set_obj(self, namespace: Namespace, key: Keys, value: object) -> None:
         check_namespace_and_key(namespace, key)
@@ -100,7 +103,8 @@ class RedisClient:
 
     def get_obj(self, namespace: Namespace, key: Keys) -> Optional[object]:
         check_namespace_and_key(namespace, key)
-        return pickle.loads(self.__db.get(join(namespace, key)))
+        obj: Optional[bytes] = self.__db.get(join(namespace, key))
+        return pickle.loads(obj) if obj is not None else None
 
     def set_str_dict(
         self, namespace: Namespace, key: Keys, value: Dict[str, str]
@@ -128,7 +132,7 @@ class RedisClient:
 
     def get_str_dict_item(
         self, namespace: Namespace, key: Keys, item_key: str
-    ) -> str:
+    ) -> Optional[str]:
         check_namespace_and_key(namespace, key)
         return self.__db.hget(join(namespace, key), item_key)
 
@@ -161,14 +165,17 @@ class RedisClient:
         current = self.__db.smembers(join(namespace, key))
         to_remove = [x for x in current if x not in new]
         to_add = [x for x in new if x not in current]
-        logging.warning(str(to_remove))
-        logging.warning(str(to_add))
         [self.__db.srem(join(namespace, key), x) for x in to_remove]
         [self.__db.sadd(join(namespace, key), x) for x in to_add]
 
     def get_set(self, namespace: Namespace, key: Keys) -> Optional[Set[str]]:
         check_namespace_and_key(namespace, key)
-        return self.__db.smembers(join(namespace, key))
+        return set(
+            [
+                x.decode("utf-8")
+                for x in self.__db.smembers(join(namespace, key))
+            ]
+        )
 
     @property
     def raw(self) -> redis.Redis:
