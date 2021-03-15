@@ -17,6 +17,10 @@ def allow_seed_rolling(ctx):
 
 
 class Core(commands.Cog):
+    """
+    Core bot commands
+    """
+
     def __init__(self, bot: commands.Bot, db: RedisClient):
         self.bot: commands.Bot = bot
         self.db: RedisClient = db

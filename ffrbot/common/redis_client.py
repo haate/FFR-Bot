@@ -58,7 +58,7 @@ def check_namespace_and_key(
             assert m in RaceKeys
         elif n is Namespace.ROLE_CONFIG:
             assert m in RoleKeys
-        elif n in Namespace.USER_CONFIG:
+        elif n is Namespace.USER_CONFIG:
             assert m in UserKeys
         else:
             logging.error("Missing Namespace in check_namespace_and_key")
@@ -134,8 +134,16 @@ class RedisClient:
     def get_str_dict_item(
         self, namespace: Namespace, key: Keys, item_key: str
     ) -> Optional[str]:
+        logging.info(namespace)
         check_namespace_and_key(namespace, key)
-        return self.__db.hget(join(namespace, key), item_key)
+        v: bytes = self.__db.hget(join(namespace, key), item_key)
+        return v.decode("utf-8") if v else None
+
+    def del_str_dict_item(
+        self, namespace: Namespace, key: Keys, item_key: str
+    ) -> None:
+        check_namespace_and_key(namespace, key)
+        self.__db.hdel(join(namespace, key), item_key)
 
     def set_obj_dict(
         self, namespace: Namespace, key: Keys, value: Dict[str, Any]

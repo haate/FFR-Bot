@@ -1,14 +1,11 @@
 from discord.ext import commands
 
 import discord
-from ffrbot.common.snippits import wait_for_yes_no
 import logging
 from typing import *
-from ffrbot.common import config, checks, text
-from ffrbot.common.redis_client import RedisClient, Namespace, RoleKeys
-from discord.utils import get
-
-from ffrbot.common import constants
+from ..common import config, checks, text
+from ..common.snippits import wait_for_yes_no
+from ..common.redis_client import RedisClient, Namespace, RoleKeys
 
 
 def is_role_requests_channel(ctx):

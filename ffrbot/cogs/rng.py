@@ -6,6 +6,10 @@ from typing import List
 
 
 class RNG(commands.Cog):
+    """
+    RNG commands, helps making a decision in a pinch
+    """
+
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
 

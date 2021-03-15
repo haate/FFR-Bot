@@ -1,3 +1,6 @@
+from typing import *
+
+
 add_option_wrong_format = "you passed the incorrect number of parameters"
 already_voted = "it looks like you already voted"
 cannot_convert_to_int = "there was an error converting a string to an integer"
@@ -63,3 +66,24 @@ def account_age(user_age, required_age):
         + str(required_age)
         + " days old."
     )
+
+
+set_twitch_id_not_found = (
+    "No twitch id was found, did you forgot to add it after"
+    " the command name?"
+)
+
+get_twitch_id_not_found = "No twitch id was found for this user"
+
+delete_user_data_yes_no = (
+    "Are you sure you want to delete all bot saved user"
+    " data?\nRespond with yes or no"
+)
+
+
+def list_people_no_twitch_id_set(names: List[str]):
+    msg = "The following people don't have their twitch id set: "
+    for name in names:
+        msg += name + ", "
+    msg = msg[:-2]
+    return msg

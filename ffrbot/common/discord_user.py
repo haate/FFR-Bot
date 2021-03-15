@@ -1,4 +1,5 @@
 from .redis_client import RedisClient, Namespace, UserKeys
+import logging
 from typing import *
 from .config import get_guild
 import discord
@@ -21,13 +22,30 @@ class DiscordUser:
         return member.name if member else ""
 
     @property
-    def twitch_id(self) -> str:
-        return self.__twitch_id
+    def twitch_id(self) -> Optional[str]:
+        return self.__db.get_str_dict_item(
+            Namespace.USER_CONFIG, UserKeys.TWITCH_IDS, str(self.user_id)
+        )
 
     @twitch_id.setter
     def twitch_id(self, value: str) -> None:
-        self.__twitch_id = value
+        self.__db.set_str_dict_item(
+            Namespace.USER_CONFIG,
+            UserKeys.TWITCH_IDS,
+            str(self.user_id),
+            value,
+        )
 
     @twitch_id.deleter
     def twitch_id(self) -> None:
-        del self.__twitch_id
+        self.__db.del_str_dict_item(
+            Namespace.USER_CONFIG,
+            UserKeys.TWITCH_IDS,
+            str(self.user_id),
+        )
+
+    def delete(self) -> None:
+        """
+        This deletes all bot saved data about this user
+        """
+        del self.twitch_id
