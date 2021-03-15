@@ -5,15 +5,17 @@ import time
 import discord
 from discord.ext import commands
 
-from .common import constants
 
-from .racing.races import Races
-from .roles import Roles
-from .voting.polls import Polls
-from .rng import RNG
-from .core.core import Core
+from .cogs.racing.races import Races
+from .cogs.roles import Roles
+from .cogs.core import Core
+from .cogs.voting.polls import Polls
+from .cogs.rng import RNG
+from .cogs.users import Users
+
+
 from .common.config_commands import ConfigCommands
-from .common import config
+from .common import config, constants
 from .common.redis_client import RedisClient
 
 
@@ -26,7 +28,6 @@ def main():
     )
 
     db = RedisClient()
-    config.init(db)
 
     intents = discord.Intents.default()
     intents.members = True
@@ -40,11 +41,15 @@ def main():
         intents=intents,
     )
 
-    bot.add_cog(Core(bot))
+    config.init(db, bot)
+    logging.info("initializing bot.")
+
+    bot.add_cog(Core(bot, db))
     bot.add_cog(Races(bot, db))
     bot.add_cog(Roles(bot, db))
     bot.add_cog(Polls(bot, db))
     bot.add_cog(RNG(bot))
+    bot.add_cog(Users(bot, db))
     bot.add_cog(ConfigCommands(bot))
 
     @bot.event

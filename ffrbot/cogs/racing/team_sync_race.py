@@ -4,7 +4,6 @@ from .sync_race import SyncRacer, SyncRace
 
 
 class TeamSyncRacer(SyncRacer):
-
     def __init__(self, user_id: str, name: str, display_name: str):
         super().__init__(user_id, name, display_name)
         self.team_name: Optional[str] = None
@@ -29,15 +28,15 @@ class TeamSyncRace(SyncRace):
         team = self.teams[team_id]
         if team is not None:
             runner.team_id = team_id
-            runner.team_name = team['name']
-            team['members'][runner.user_id] = runner
+            runner.team_name = team["name"]
+            team["members"][runner.user_id] = runner
 
     def remove_team_member(self, team_id: str, runner: TeamSyncRacer) -> None:
         team = self.teams[team_id]
         if team is not None:
             runner.team_id = None
             runner.team_name = None
-            del team['members'][runner.user_id]
+            del team["members"][runner.user_id]
 
     def remove_runner(self, runner: TeamSyncRacer) -> None:
         if runner.team_id is not None:

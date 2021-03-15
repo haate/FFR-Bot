@@ -5,10 +5,10 @@ import pickle
 import logging
 from datetime import datetime, timezone
 from concurrent.futures import TimeoutError
-from ..common import checks, config
-from ..common.redis_client import RedisClient
+from ffrbot.common import checks, config
+from ffrbot.common.redis_client import RedisClient
 
-from ..common import constants, text
+from ffrbot.common import constants, text
 from .poll import Poll
 from .stv_election import StvElection
 

@@ -1,7 +1,9 @@
 from . import text
 
 
-async def wait_for_yes_no(bot, ctx, question_text, yes_cb, no_cb, timeout=120):
+async def wait_for_yes_no(
+    bot, ctx, question_text, yes_cb, no_cb=None, timeout=120
+):
     await ctx.channel.send(question_text)
 
     def check(m):
@@ -19,4 +21,5 @@ async def wait_for_yes_no(bot, ctx, question_text, yes_cb, no_cb, timeout=120):
     if reply.content.lower() == "yes":
         await yes_cb()
     else:
-        await no_cb()
+        if no_cb:
+            await no_cb()

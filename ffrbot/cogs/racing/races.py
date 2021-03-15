@@ -6,13 +6,13 @@ import redis
 from discord.ext import commands
 
 # from ..common import checks
-from ..common import config
+from ffrbot.common import config
 import logging
 
 # from ..common import constants
 from .sync_race import SyncRace
 from .async_race import AsyncRace
-from ..common.redis_client import RedisClient, Namespace, RaceKeys
+from ffrbot.common.redis_client import RedisClient, Namespace, RaceKeys
 from .race import Race
 
 allow_races_bool: bool = True

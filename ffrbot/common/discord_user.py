@@ -1,38 +1,24 @@
 from .redis_client import RedisClient, Namespace, UserKeys
+from typing import *
+from .config import get_guild
+import discord
 
 
 class DiscordUser:
-    def __init__(self, user_id: str, db: RedisClient):
+    def __init__(self, user_id: int, db: RedisClient):
         self.user_id = user_id
         self.__db: RedisClient = db
+        self.__twitch_id: Optional[str] = None
 
     @property
     def display_name(self) -> str:
-        return self.__db.get_str_dict_item(
-            Namespace.USER_CONFIG, UserKeys.DISPLAY_NAMES, self.user_id
-        )
-
-    @display_name.setter
-    def display_name(self, value: str) -> None:
-        self.__db.set_str_dict_item(
-            Namespace.USER_CONFIG, UserKeys.DISPLAY_NAMES, self.user_id, value
-        )
-
-    @display_name.deleter
-    def display_name(self) -> None:
-        del self.__twitch_id
+        member: Optional[discord.Member] = get_guild().get_member(self.user_id)
+        return member.display_name if member else ""
 
     @property
     def name(self) -> str:
-        return self.__twitch_id
-
-    @name.setter
-    def name(self, value: str) -> None:
-        self.__twitch_id = value
-
-    @name.deleter
-    def name(self) -> None:
-        del self.__twitch_id
+        member: Optional[discord.Member] = get_guild().get_member(self.user_id)
+        return member.name if member else ""
 
     @property
     def twitch_id(self) -> str:

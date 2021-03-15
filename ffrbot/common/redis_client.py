@@ -19,6 +19,7 @@ class AdminKeys(Enum):
     ROLE_IDS = "admin_role_ids"
     POLLS_CATEGORY = "polls_category_id"
     ROLE_REQUESTS_CHANNEL = "role_requests_channel"
+    GUILD_ID = "guild_id"
 
 
 @unique

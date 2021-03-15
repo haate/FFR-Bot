@@ -11,6 +11,9 @@ class RNG(commands.Cog):
 
     @commands.command()
     async def roll(self, ctx, dice):
+        """
+        Simulates a dice roll in the form [N]dM. e.g ?roll 3d6, or ?roll d8
+        """
         match = re.match(r"((\d{1,3})?d\d{1,9})", dice)
         if match is None:
             await ctx.message.channel.send(
@@ -30,6 +33,9 @@ class RNG(commands.Cog):
 
     @commands.command()
     async def coin(self, ctx):
+        """
+        Simulates a coin flip.
+        """
         coin_res: str
         if random() >= 0.5:
             coin_res = "Heads"
