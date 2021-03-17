@@ -439,7 +439,12 @@ class Races(commands.Cog):
 
         parsed = urlparse(url)
         flags = parse_qs(parsed.query)["f"][0]
-        site = re.match(r"([^\.]*)", parsed.netloc)[0]
+        netloc_divided = re.match(r"([^\.]*)", parsed.netloc)
+        if len(netloc_divided) > 2:
+            site = netloc_divided[0]    
+        else:
+            site = None
+        
         msg = await ctx.channel.send(
             self.flagseedgen(
                 flags,
