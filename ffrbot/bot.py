@@ -14,7 +14,7 @@ from .cogs.rng import RNG
 from .cogs.users import Users
 
 
-from .common.config_commands import ConfigCommands
+from ffrbot.cogs.config import ConfigCommands
 from .common import config, constants
 from .common.redis_client import RedisClient
 
@@ -63,7 +63,14 @@ def main():
     @bot.event
     async def on_command_completion(ctx: commands.Context):
         msg: discord.Message = ctx.message
-        await msg.add_reaction("✔")
+
+        try:
+            await msg.add_reaction("✔")
+        except Exception as e:
+            logging.debug(
+                f"on_command_completion exception: {repr(e)},"
+                f" original command possibly deleted"
+            )
 
     @bot.event
     async def on_command_error(
@@ -71,7 +78,13 @@ def main():
     ):
         msg: discord.Message = ctx.message
         logging.warning("command error: " + str(error))
-        await msg.add_reaction("✖")
+        try:
+            await msg.add_reaction("✖")
+        except Exception as e:
+            logging.debug(
+                f"on_command_error exception: {repr(e)},"
+                f" original command possibly deleted"
+            )
 
     def handle_exit(client, loop):
         # taken from https://stackoverflow.com/a/50981577

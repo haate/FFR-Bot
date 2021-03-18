@@ -1,8 +1,8 @@
 from discord.ext import commands
-from . import constants
+from ffrbot.common import constants
 import discord
-from . import config
-from . import text
+from ffrbot.common import config
+from ffrbot.common import text
 import logging
 
 
@@ -11,7 +11,7 @@ import logging
 def is_admin():
     """
     Checks if the user is an admin (from the admin roles in the config)
-     or the bot admin
+    or the bot admin
     """
 
     def predicate(ctx):

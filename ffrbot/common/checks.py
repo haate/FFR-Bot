@@ -28,3 +28,15 @@ def is_bot_admin():
         return user.id == constants.bot_admin_id
 
     return commands.check(predicate)
+
+
+def is_role_requests_channel():
+    """
+    Checks if the channel the command was executed in is the role requests
+    channel.
+    """
+
+    def predicate(ctx):
+        return ctx.channel.id == config.get_role_requests_channel_id()
+
+    return commands.check(predicate)

@@ -49,12 +49,22 @@ poll_still_open = "the poll is still open."
 
 
 category_not_found = "The bot could not find the category for this channel."
-self_assignable_roles_message = "Self As"
+role_requests_channel_not_set = "The role requests channel was not set."
 roles_added = "Self-Assignable roles added"
+roles_removed = "Self-Assignable roles removed"
 roles_not_added = "Self-Assignable roles not added"
-roles_look_ok = (
+roles_not_removed = "Self-Assignable roles not removed"
+roles_look_ok_added = (
     "Do the following self assignable roles look correct? Reply "
     'with "yes" or "no"'
+)
+roles_look_ok_removed = (
+    "Do the following self assignable roles look correct? Reply "
+    'with "yes" or "no"'
+)
+add_self_assignable_role_arg_count_off = (
+    "The number of role names and descriptions passed to this command"
+    "is not even, did you forget one, or are you missing quotes?"
 )
 
 

@@ -186,6 +186,27 @@ class RedisClient:
             ]
         )
 
+    def set_int_set(
+        self, namespace: Namespace, key: Keys, new: Iterable[int]
+    ) -> None:
+        check_namespace_and_key(namespace, key)
+        current = self.__db.smembers(join(namespace, key))
+        to_remove = [x for x in current if str(x) not in new]
+        to_add = [x for x in new if x not in current]
+        [self.__db.srem(join(namespace, key), x) for x in to_remove]
+        [self.__db.sadd(join(namespace, key), x) for x in to_add]
+
+    def get_int_set(
+        self, namespace: Namespace, key: Keys
+    ) -> Optional[Set[int]]:
+        check_namespace_and_key(namespace, key)
+        return set(
+            [
+                x.decode("utf-8")
+                for x in self.__db.smembers(join(namespace, key))
+            ]
+        )
+
     @property
     def raw(self) -> redis.Redis:
         return self.__db
