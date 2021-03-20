@@ -5,7 +5,7 @@ import re
 import logging
 from ..common import text
 
-from ..common.redis_client import RedisClient, Namespace, UserKeys
+from ..common.redis_client import RedisClient
 from ..common.discord_user import DiscordUser
 from ..common.snippits import wait_for_yes_no
 

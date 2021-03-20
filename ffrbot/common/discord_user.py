@@ -1,5 +1,4 @@
 from .redis_client import RedisClient, Namespace, UserKeys
-import logging
 from typing import *
 from .config import get_guild
 import discord

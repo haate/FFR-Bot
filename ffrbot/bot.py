@@ -1,4 +1,5 @@
 import asyncio
+import platform
 import logging
 import time
 
@@ -12,15 +13,14 @@ from .cogs.core import Core
 from .cogs.voting.polls import Polls
 from .cogs.rng import RNG
 from .cogs.users import Users
+from .cogs.config import ConfigCommands
 
 
-from ffrbot.cogs.config import ConfigCommands
 from .common import config, constants
 from .common.redis_client import RedisClient
 
 
 def main():
-    # format logging
     logging.basicConfig(
         format="%(asctime)s %(levelname)-8s %(message)s",
         level=logging.INFO,
@@ -55,7 +55,8 @@ def main():
 
     @bot.event
     async def on_ready():
-        logging.info("discord.py version: " + discord.__version__)
+        logging.info(f"python version: {platform.python_version()}")
+        logging.info(f"discord.py version: {discord.__version__}")
         logging.info("Logged in as")
         logging.info(bot.user.name)
         logging.info(bot.user.id)
@@ -120,7 +121,7 @@ def main():
                 logging.exception(e)
                 handle_exit(client, loop)
             logging.info("Waiting until restart")
-            time.sleep(constants.Sleep_Time)
+            time.sleep(constants.SLEEP_TIME)
 
     with open("ffrbot/token.txt", "r") as f:
         token = f.read()

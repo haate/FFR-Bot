@@ -14,11 +14,11 @@ def is_admin():
     or the bot admin
     """
 
-    def predicate(ctx):
+    async def predicate(ctx: commands.Context):
         user = ctx.author
         return (
             any(role.id in config.get_admin_role_ids() for role in user.roles)
-            or user.id == constants.bot_admin_id
+            or user.id == constants.BOT_ADMIN_ID
         )
 
     return commands.check(predicate)
@@ -29,9 +29,9 @@ def is_bot_admin():
     Checks if the user is the bot admin.
     """
 
-    def predicate(ctx):
+    async def predicate(ctx: commands.Context) -> bool:
         user = ctx.author
-        return user.id == constants.bot_admin_id
+        return user.id == constants.BOT_ADMIN_ID
 
     return commands.check(predicate)
 
@@ -51,7 +51,9 @@ class ConfigCommands(commands.Cog):
         msg: discord.Message = ctx.message
         new_roles = [x.id for x in msg.role_mentions]
         logging.info("new admin role ids: " + str(new_roles))
-        config.set_admin_role_ids(config.get_admin_role_ids().union(new_roles))
+        config.set_admin_role_ids(
+            config.get_admin_role_ids().union(str(new_roles))
+        )
         logging.info(
             "new admins:\n"
             + repr([str(x) for x in config.get_admin_role_ids()])

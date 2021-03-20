@@ -8,11 +8,11 @@ def is_admin():
      or the bot admin
     """
 
-    def predicate(ctx):
+    async def predicate(ctx: commands.Context):
         user = ctx.author
         return (
             any(role.id in config.get_admin_role_ids() for role in user.roles)
-            or user.id == constants.bot_admin_id
+            or user.id == constants.BOT_ADMIN_ID
         )
 
     return commands.check(predicate)
@@ -23,9 +23,9 @@ def is_bot_admin():
     Checks if the user is the bot admin.
     """
 
-    def predicate(ctx):
+    async def predicate(ctx: commands.Context):
         user = ctx.author
-        return user.id == constants.bot_admin_id
+        return user.id == constants.BOT_ADMIN_ID
 
     return commands.check(predicate)
 
@@ -36,7 +36,7 @@ def is_role_requests_channel():
     channel.
     """
 
-    def predicate(ctx):
+    async def predicate(ctx: commands.Context):
         return ctx.channel.id == config.get_role_requests_channel_id()
 
     return commands.check(predicate)

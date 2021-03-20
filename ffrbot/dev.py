@@ -20,14 +20,6 @@ class Event(LoggingEventHandler):
         asyncio.set_event_loop(loop)
         bot.main()
 
-    # def on_created(self, event):
-    #     if self.bot_process is not None:
-    #         self.bot_process.terminate()
-    #     self.bot_process = multiprocessing.Process(
-    #         target=self.event_loop_wrapper, daemon=True
-    #     )
-    #     self.bot_process.start()
-
     def dispatch(self, event):
         logging.info(event)
         if self.bot_process is not None:

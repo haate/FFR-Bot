@@ -1,19 +1,10 @@
-from typing import *
-
-from ffrbot.common import constants, checks, config, snippits
-from ffrbot.common.redis_client import RedisClient
+from ..common import constants, checks, config, snippits
+from ..common.redis_client import RedisClient
 
 from discord.ext import commands
-from discord.utils import get
 import discord
 
 import logging
-
-
-def allow_seed_rolling(ctx):
-    return (ctx.channel.name == constants.call_for_races_channel) or (
-        ctx.channel.category_id == get(ctx.guild.categories, name="races").id
-    )
 
 
 class Core(commands.Cog):
@@ -57,7 +48,7 @@ class Core(commands.Cog):
 
     @commands.command()
     @checks.is_bot_admin()
-    async def purge(self, ctx):
+    async def purge(self, ctx: commands.Context):
         """
         Clears the channel history -- for testing
         """
@@ -74,9 +65,19 @@ class Core(commands.Cog):
         )
 
     @commands.command(aliases=["whoami"])
-    async def who_am_i(self, ctx):
+    async def who_am_i(self, ctx: commands.Context):
         """
         Messages you your discord user id
         """
         await ctx.author.send(ctx.author.id)
+        await ctx.message.delete()
+
+    @commands.command()
+    async def version(self, ctx: commands.Context):
+        """
+        Messages you the version of the bot
+        """
+        await ctx.author.send(
+            f"version: {constants.VERSION}\nsha: {constants.GIT_SHA}"
+        )
         await ctx.message.delete()
