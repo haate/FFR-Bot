@@ -89,7 +89,7 @@ class Roles(commands.Cog):
         descriptions: List[str] = []
         roles: List[discord.Role] = []
 
-        if len(args) % 2 is not 0:
+        if len(args) % 2 != 0:
             await ctx.author.send(text.add_self_assignable_role_arg_count_off)
             await ctx.message.delete()
             return
@@ -113,17 +113,17 @@ class Roles(commands.Cog):
         async def add_roles():
             current_role_ids = self.db.get_set(
                 Namespace.ROLE_CONFIG,
-                RoleKeys.SELF_ASSIGNABLE_ROLE_IDS,
+                RoleKeys.ROLE_IDS,
             )
 
             current_role_names = self.db.get_str_dict(
                 Namespace.ROLE_CONFIG,
-                RoleKeys.SELF_ASSIGNABLE_ROLE_NAMES,
+                RoleKeys.ROLE_NAMES,
             )
 
             current_descriptions = self.db.get_str_dict(
                 Namespace.ROLE_CONFIG,
-                RoleKeys.SELF_ASSIGNABLE_ROLE_DESCRIPTIONS,
+                RoleKeys.ROLE_DESCRIPTIONS,
             )
 
             new_role_ids = set([str(x.id) for x in roles]).union(
@@ -238,27 +238,39 @@ class Roles(commands.Cog):
         await wait_for_yes_no(self.bot, ctx, question, remove_roles, no_change)
 
     @commands.command(aliases=["lsar", "listroles"])
-    @checks.is_role_requests_channel()
     async def list_roles(self, ctx: commands.Context):
         """
         Lists all self assignable roles.
         """
 
-        role_ids: Set[str] = self.db.get_set(
-            Namespace.ROLE_CONFIG, RoleKeys.SELF_ASSIGNABLE_ROLE_IDS
+        role_ids: Set[str] = (
+            self.db.get_set(Namespace.ROLE_CONFIG, RoleKeys.ROLE_IDS) or set()
         )
 
-        descriptions: Dict[str, str] = self.db.get_str_dict(
-            Namespace.ROLE_CONFIG, RoleKeys.SELF_ASSIGNABLE_ROLE_DESCRIPTIONS
+        descriptions: Dict[str, str] = (
+            self.db.get_str_dict(
+                Namespace.ROLE_CONFIG,
+                RoleKeys.ROLE_DESCRIPTIONS,
+            )
+            or dict()
         )
 
-        names: Dict[str, str] = self.db.get_str_dict(
-            Namespace.ROLE_CONFIG, RoleKeys.SELF_ASSIGNABLE_ROLE_NAMES
-        )
+        roles = [ctx.guild.get_role(int(role_id)) for role_id in role_ids]
+
+        names: Dict[str, str] = {
+            str(role.id): role.name for role in roles if role is not None
+        }
 
         embed = discord.Embed(
             title="Self-Assignable Roles",
             description="Lists self assignable roles and their descriptions",
+        )
+        logging.debug(
+            "list_roles command"
+            + repr(names)
+            + repr(roles)
+            + repr(descriptions)
+            + repr(role_ids)
         )
 
         for role_id in role_ids:
@@ -279,7 +291,7 @@ class Roles(commands.Cog):
 
         await ctx.channel.send(embed=embed)
 
-    @commands.command()
+    @commands.command(aliases=["grp"])
     @checks.is_admin()
     async def generate_role_posts(self, ctx: commands.Context):
         """
@@ -287,22 +299,84 @@ class Roles(commands.Cog):
         the self assignable roles are updated.
         """
 
-        role_ids: Set[str] = self.db.get_set(
-            Namespace.ROLE_CONFIG, RoleKeys.SELF_ASSIGNABLE_ROLE_IDS
+        role_ids: Set[str] = (
+            self.db.get_set(Namespace.ROLE_CONFIG, RoleKeys.ROLE_IDS) or set()
         )
 
-        descriptions: Dict[str, str] = self.db.get_str_dict(
-            Namespace.ROLE_CONFIG, RoleKeys.SELF_ASSIGNABLE_ROLE_DESCRIPTIONS
+        descriptions: Dict[str, str] = (
+            self.db.get_str_dict(
+                Namespace.ROLE_CONFIG,
+                RoleKeys.ROLE_DESCRIPTIONS,
+            )
+            or dict()
         )
 
-        names: Dict[str, str] = self.db.get_str_dict(
-            Namespace.ROLE_CONFIG, RoleKeys.SELF_ASSIGNABLE_ROLE_NAMES
-        )
-
-        role_requests_channel = ctx.guild.get_channel(
-            config.get_role_requests_channel_id()
-        )
+        role_requests_channel: Optional[
+            discord.TextChannel
+        ] = ctx.guild.get_channel(config.get_role_requests_channel_id())
 
         if role_requests_channel is None:
             await ctx.author.send(text.role_requests_channel_not_set)
             await ctx.message.delete()
+            return
+
+        roles: List[discord.Role] = []
+        new_descriptions: Dict[str, str] = dict()
+
+        for i in range(len(role_ids)):
+            role_id = role_ids.pop()
+            role = ctx.guild.get_role(int(role_id))
+            if role is not None:
+                roles.append(role)
+
+        for k, v in descriptions.items():
+            if k in [role.id for role in roles]:
+                new_descriptions[k] = v
+
+        await ctx.channel.send(text.cleaning_up_stale_roles)
+
+        self.db.set_set(
+            Namespace.ROLE_CONFIG,
+            RoleKeys.ROLE_IDS,
+            set([role.id for role in roles]),
+        )
+
+        self.db.set_str_dict(
+            Namespace.ROLE_CONFIG,
+            RoleKeys.ROLE_DESCRIPTIONS,
+            new_descriptions,
+        )
+
+        role_request_message_ids = (
+            self.db.get_set(
+                Namespace.ROLE_CONFIG, RoleKeys.ROLE_REQUEST_MESSAGE_IDS
+            )
+            or set()
+        )
+
+        for msg_id in role_request_message_ids:
+            try:
+                msg = await role_requests_channel.fetch_message(int(msg_id))
+                await msg.delete()
+            except Exception as e:
+                logging.warning(
+                    f"The following error occurred in generate_role_posts: {e}"
+                )
+
+        new_role_request_messages: List[discord.Message] = [
+            await role_requests_channel.send(text.self_assignable_role_message)
+        ]
+        logging.info(repr(roles))
+
+        for role in roles:
+            new_role_request_messages.append(
+                await role_requests_channel.send(
+                    role.name + " " + new_descriptions[role.id]
+                )
+            )
+
+        self.db.set_set(
+            Namespace.ROLE_CONFIG,
+            RoleKeys.ROLE_REQUEST_MESSAGE_IDS,
+            set([str(msg.id) for msg in new_role_request_messages]),
+        )

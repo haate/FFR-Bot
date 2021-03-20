@@ -40,9 +40,9 @@ class UserKeys(Enum):
 
 @unique
 class RoleKeys(Enum):
-    SELF_ASSIGNABLE_ROLE_IDS = "self_assignable_role_ids"
-    SELF_ASSIGNABLE_ROLE_DESCRIPTIONS = "self_assignable_role_descriptions"
-    SELF_ASSIGNABLE_ROLE_NAMES = "self_assignable_role_names"
+    ROLE_IDS = "role_ids"
+    ROLE_DESCRIPTIONS = "role_descriptions"
+    ROLE_REQUEST_MESSAGE_IDS = "role_request_message_ids"
 
 
 Keys = Union[AdminKeys, RaceKeys, UserKeys, RoleKeys]

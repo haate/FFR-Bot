@@ -67,6 +67,20 @@ add_self_assignable_role_arg_count_off = (
     "is not even, did you forget one, or are you missing quotes?"
 )
 
+self_assignable_role_message = (
+    "To add or remove one of the following roles, click on the reaction on the"
+    "message for the role you want to add or remove"
+)
+
+
+cleaning_up_stale_roles = (
+    "Removing stale roles/descriptions from the bot database at this point if"
+    " exist."
+)
+
+name_colon = "name:"
+description_colon = "description:"
+
 
 def account_age(user_age, required_age):
     return (

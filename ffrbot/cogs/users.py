@@ -40,23 +40,27 @@ class Users(commands.Cog):
             # We need to parse the url for their twitch id
             try:
                 match = re.search(r"twitch\.tv/[^/?]*", value)
-                value = match[0].split("/")[1] if match is not None else None
+                twitch_id = (
+                    match[0].split("/")[1] if match is not None else None
+                )
             except Exception:
                 await ctx.channel.send(text.set_twitch_id_not_found)
                 raise Exception("twitch id not found, exiting early")
+        else:
+            twitch_id = value
 
-        if value is None or value is "":
+        if twitch_id is None or twitch_id == "":
             await ctx.channel.send(text.set_twitch_id_not_found)
             raise Exception("twitch id not found, exiting early")
 
         async def yes():
-            user.twitch_id = value
+            user.twitch_id = id
 
         await wait_for_yes_no(
             self.bot,
             ctx,
-            f"Your twitch id will be set to: {value}\n Type yes to confirm or"
-            f" no to abort.",
+            f"Your twitch id will be set to: {twitch_id}\n Type yes to confirm"
+            f" or no to abort.",
             yes,
         )
 
