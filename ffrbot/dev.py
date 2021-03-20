@@ -1,5 +1,6 @@
 import sys
 import time
+import asyncio
 import logging
 from watchdog.observers import Observer
 from watchdog.events import LoggingEventHandler
@@ -14,12 +15,17 @@ class Event(LoggingEventHandler):
         super().__init__()
         self.bot_process = process
 
+    def event_loop_wrapper(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        bot.main()
+
     def dispatch(self, event):
         logging.info(event)
         if self.bot_process is not None:
             self.bot_process.terminate()
         self.bot_process = multiprocessing.Process(
-            target=bot.main, daemon=True
+            target=self.event_loop_wrapper, daemon=True
         )
         self.bot_process.start()
 
