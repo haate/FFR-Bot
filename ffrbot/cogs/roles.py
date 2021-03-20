@@ -10,72 +10,8 @@ from ..common.redis_client import RedisClient, Namespace, RoleKeys
 
 class Roles(commands.Cog):
     def __init__(self, bot, db):
-        self.bot = bot
+        self.bot: commands.Bot = bot
         self.db: RedisClient = db
-
-    @commands.command(aliases=["ar", "addrole"])
-    @checks.is_role_requests_channel()
-    async def add_role(self, ctx, *, role=None):
-        if role is None:
-            await ctx.author.send("you forget to ask for a role")
-            await ctx.message.delete()
-            return
-        role_clean = role.lower().strip("\"'")
-
-        role_names = self.db.get_str_dict(
-            Namespace.ROLE_CONFIG,
-            RoleKeys.SELF_ASSIGNABLE_ROLE_NAMES,
-        )
-
-        if role_clean not in [x.lower() for x in role_names.values()]:
-            await ctx.author.send(
-                "you cannot give yourself the role: "
-                + role
-                + "\n or that role doesnt exist"
-            )
-            await ctx.message.delete()
-        else:
-            role = ctx.guild.get_role(
-                int(
-                    [
-                        k
-                        for k, v in role_names.items()
-                        if v.lower() == role_clean
-                    ][0]
-                )
-            )
-            await ctx.author.add_roles(role)
-
-    @commands.command(aliases=["rr", "removerole"])
-    @checks.is_role_requests_channel()
-    async def remove_role(self, ctx, *, role=None):
-        if role is None:
-            await ctx.author.send("you forget to say which role to remove")
-            await ctx.message.delete()
-            return
-        role_clean = role.lower().strip("\"'")
-        role_names = self.db.get_str_dict(
-            Namespace.ROLE_CONFIG,
-            RoleKeys.SELF_ASSIGNABLE_ROLE_NAMES,
-        )
-        if role_clean not in [x.lower() for x in role_names.values()]:
-            await ctx.author.send(
-                "you cannot remove yourself from the role: "
-                + role
-                + "\n or that role doesnt exist"
-            )
-            await ctx.message.delete()
-        else:
-            role = ctx.guild.get_role(
-                int(
-                    [
-                        k
-                        for k, v in role_names.items()
-                        if v.lower() == role_clean
-                    ][0]
-                )
-            )
-            await ctx.author.remove_roles(role)
 
     @commands.command(aliases=["asar"])
     @checks.is_admin()
@@ -116,11 +52,6 @@ class Roles(commands.Cog):
                 RoleKeys.ROLE_IDS,
             )
 
-            current_role_names = self.db.get_str_dict(
-                Namespace.ROLE_CONFIG,
-                RoleKeys.ROLE_NAMES,
-            )
-
             current_descriptions = self.db.get_str_dict(
                 Namespace.ROLE_CONFIG,
                 RoleKeys.ROLE_DESCRIPTIONS,
@@ -132,20 +63,8 @@ class Roles(commands.Cog):
 
             self.db.set_set(
                 Namespace.ROLE_CONFIG,
-                RoleKeys.SELF_ASSIGNABLE_ROLE_IDS,
+                RoleKeys.ROLE_IDS,
                 new_role_ids,
-            )
-            role_names = dict([(str(x.id), x.name) for x in roles])
-
-            if current_role_names:
-                current_role_names.update(role_names)
-                new_role_names = current_role_names
-            else:
-                new_role_names = role_names
-            self.db.set_str_dict(
-                Namespace.ROLE_CONFIG,
-                RoleKeys.SELF_ASSIGNABLE_ROLE_NAMES,
-                new_role_names,
             )
 
             description_dict = dict(
@@ -160,7 +79,7 @@ class Roles(commands.Cog):
 
             self.db.set_str_dict(
                 Namespace.ROLE_CONFIG,
-                RoleKeys.SELF_ASSIGNABLE_ROLE_DESCRIPTIONS,
+                RoleKeys.ROLE_DESCRIPTIONS,
                 new_descriptions,
             )
             await ctx.channel.send(text.roles_added)
@@ -196,31 +115,26 @@ class Roles(commands.Cog):
                 await ctx.author.send(
                     'could not find the role named: "' + role_name + '"'
                 )
-                ctx.message.delete()
+                await ctx.message.delete()
                 raise Exception("couldn't find role name: " + role_name)
             roles.append(role)
 
         async def remove_roles():
             current_role_ids = self.db.get_set(
                 Namespace.ROLE_CONFIG,
-                RoleKeys.SELF_ASSIGNABLE_ROLE_IDS,
+                RoleKeys.ROLE_IDS,
             )
 
             self.db.set_set(
                 Namespace.ROLE_CONFIG,
-                RoleKeys.SELF_ASSIGNABLE_ROLE_IDS,
+                RoleKeys.ROLE_IDS,
                 current_role_ids - set([str(x.id) for x in roles]),
             )
 
             for x in roles:
                 self.db.del_str_dict_item(
                     Namespace.ROLE_CONFIG,
-                    RoleKeys.SELF_ASSIGNABLE_ROLE_NAMES,
-                    str(x.id),
-                )
-                self.db.del_str_dict_item(
-                    Namespace.ROLE_CONFIG,
-                    RoleKeys.SELF_ASSIGNABLE_ROLE_DESCRIPTIONS,
+                    RoleKeys.ROLE_DESCRIPTIONS,
                     str(x.id),
                 )
 
@@ -237,10 +151,12 @@ class Roles(commands.Cog):
 
         await wait_for_yes_no(self.bot, ctx, question, remove_roles, no_change)
 
-    @commands.command(aliases=["lsar", "listroles"])
+    @commands.command(aliases=["lsar"])
+    @checks.is_admin()
     async def list_roles(self, ctx: commands.Context):
         """
         Lists all self assignable roles.
+        ?lsar
         """
 
         role_ids: Set[str] = (
@@ -279,15 +195,11 @@ class Roles(commands.Cog):
                 description = descriptions[role_id]
                 embed.add_field(
                     name=name,
-                    value=description
-                    + "\n\njoin this role with: ?addrole "
-                    + name,
+                    value=description,
                     inline=False,
                 )
             except Exception as e:
                 logging.warning("Issue in roles.list_roles: " + repr(e))
-
-        embed.colour = 0x0000FF
 
         await ctx.channel.send(embed=embed)
 
@@ -297,6 +209,7 @@ class Roles(commands.Cog):
         """
         Generates, or regenerates the bot posts in role requests after
         the self assignable roles are updated.
+        ?grp
         """
 
         role_ids: Set[str] = (
@@ -330,15 +243,16 @@ class Roles(commands.Cog):
                 roles.append(role)
 
         for k, v in descriptions.items():
-            if k in [role.id for role in roles]:
+            if k in [str(role.id) for role in roles]:
                 new_descriptions[k] = v
 
         await ctx.channel.send(text.cleaning_up_stale_roles)
+        logging.info(roles)
 
         self.db.set_set(
             Namespace.ROLE_CONFIG,
             RoleKeys.ROLE_IDS,
-            set([role.id for role in roles]),
+            set([str(role.id) for role in roles]),
         )
 
         self.db.set_str_dict(
@@ -347,14 +261,19 @@ class Roles(commands.Cog):
             new_descriptions,
         )
 
-        role_request_message_ids = (
-            self.db.get_set(
-                Namespace.ROLE_CONFIG, RoleKeys.ROLE_REQUEST_MESSAGE_IDS
-            )
-            or set()
+        current_role_message_ids = set(
+            self.db.get_str_dict(
+                Namespace.ROLE_CONFIG, RoleKeys.MESSAGE_ID_ROLE_ID_MAP
+            ).keys()
         )
 
-        for msg_id in role_request_message_ids:
+        explanation_msg_id = self.db.get_str(
+            Namespace.ROLE_CONFIG, RoleKeys.ROLE_REQUEST_EXPLANATION_ID
+        )
+        if explanation_msg_id:
+            current_role_message_ids.add(explanation_msg_id)
+
+        for msg_id in current_role_message_ids:
             try:
                 msg = await role_requests_channel.fetch_message(int(msg_id))
                 await msg.delete()
@@ -363,20 +282,57 @@ class Roles(commands.Cog):
                     f"The following error occurred in generate_role_posts: {e}"
                 )
 
-        new_role_request_messages: List[discord.Message] = [
-            await role_requests_channel.send(text.self_assignable_role_message)
-        ]
-        logging.info(repr(roles))
+        role_msg_role_id_mapping: Dict[str, str] = dict()
+
+        explanation = await role_requests_channel.send(
+            text.self_assignable_role_message
+        )
+
+        self.db.set_str(
+            Namespace.ROLE_CONFIG,
+            RoleKeys.ROLE_REQUEST_EXPLANATION_ID,
+            str(explanation.id),
+        )
 
         for role in roles:
-            new_role_request_messages.append(
-                await role_requests_channel.send(
-                    role.name + " " + new_descriptions[role.id]
-                )
+            msg = await role_requests_channel.send(
+                text.role_message(role.name, new_descriptions[str(role.id)])
+            )
+            await msg.add_reaction("✔")
+            role_msg_role_id_mapping[str(msg.id)] = str(role.id)
+
+        self.db.set_str_dict(
+            Namespace.ROLE_CONFIG,
+            RoleKeys.MESSAGE_ID_ROLE_ID_MAP,
+            role_msg_role_id_mapping,
+        )
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(
+        self, payload: discord.RawReactionActionEvent
+    ):
+
+        msg_id_role_id_map = self.db.get_str_dict(
+            Namespace.ROLE_CONFIG, RoleKeys.MESSAGE_ID_ROLE_ID_MAP
+        )
+        if (
+            str(payload.message_id) in msg_id_role_id_map.keys()
+            and payload.user_id != self.bot.user.id
+        ):
+            guild = self.bot.get_guild(payload.guild_id)
+            role = guild.get_role(
+                int(msg_id_role_id_map[str(payload.message_id)])
             )
 
-        self.db.set_set(
-            Namespace.ROLE_CONFIG,
-            RoleKeys.ROLE_REQUEST_MESSAGE_IDS,
-            set([str(msg.id) for msg in new_role_request_messages]),
-        )
+            user = guild.get_member(payload.user_id)
+            user_roles = user.roles
+            if role not in user_roles:
+                await user.add_roles(role)
+            else:
+                await user.remove_roles(role)
+
+            channel = self.bot.get_channel(payload.channel_id)
+            msg = await channel.fetch_message(payload.message_id)
+
+            await msg.clear_reactions()
+            await msg.add_reaction("✔")

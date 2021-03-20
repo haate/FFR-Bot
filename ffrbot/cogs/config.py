@@ -114,7 +114,7 @@ class ConfigCommands(commands.Cog):
 
         category: discord.CategoryChannel = ctx.channel.category
         if category is None:
-            ctx.channel.send(text.category_not_found)
+            await ctx.channel.send(text.category_not_found)
             return
 
         config.set_polls_category_id(category.id)

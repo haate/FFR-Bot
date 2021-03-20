@@ -31,6 +31,7 @@ def main():
 
     intents = discord.Intents.default()
     intents.members = True
+    intents.reactions = True
 
     description = "FFR discord bot"
 

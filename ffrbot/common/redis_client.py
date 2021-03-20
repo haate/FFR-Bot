@@ -42,7 +42,8 @@ class UserKeys(Enum):
 class RoleKeys(Enum):
     ROLE_IDS = "role_ids"
     ROLE_DESCRIPTIONS = "role_descriptions"
-    ROLE_REQUEST_MESSAGE_IDS = "role_request_message_ids"
+    MESSAGE_ID_ROLE_ID_MAP = "message_id_role_id_map"
+    ROLE_REQUEST_EXPLANATION_ID = "role_request_explanation_id"
 
 
 Keys = Union[AdminKeys, RaceKeys, UserKeys, RoleKeys]
@@ -73,6 +74,9 @@ def join(namespace, key) -> str:
 
 class RedisClient:
     def __init__(self) -> None:
+        # Note: type errors in this file are because mypy reports redis
+        # returning str, but we have decode_responses=False which means
+        # redis is returning bytes
         redis_pool = redis.ConnectionPool(
             host=os.environ.get("REDIS_HOST", "localhost"),
             port=int(os.environ.get("REDIS_PORT", "6379")),
@@ -114,9 +118,7 @@ class RedisClient:
         for k, v in value.items():
             self.__db.hset(join(namespace, key), k, v)
 
-    def get_str_dict(
-        self, namespace: Namespace, key: Keys
-    ) -> Optional[Dict[str, str]]:
+    def get_str_dict(self, namespace: Namespace, key: Keys) -> Dict[str, str]:
         check_namespace_and_key(namespace, key)
         k_v_pairs = self.__db.hgetall(join(namespace, key))
         if k_v_pairs is not None:
@@ -124,6 +126,8 @@ class RedisClient:
             for k, v in k_v_pairs.items():
                 return_value[k.decode("utf-8")] = v.decode("utf-8")
             return return_value
+        else:
+            return dict()
 
     def set_str_dict_item(
         self, namespace: Namespace, key: Keys, item_key: str, value: str
@@ -177,7 +181,7 @@ class RedisClient:
         [self.__db.srem(join(namespace, key), x) for x in to_remove]
         [self.__db.sadd(join(namespace, key), x) for x in to_add]
 
-    def get_set(self, namespace: Namespace, key: Keys) -> Optional[Set[str]]:
+    def get_set(self, namespace: Namespace, key: Keys) -> Set[str]:
         check_namespace_and_key(namespace, key)
         return set(
             [

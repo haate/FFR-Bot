@@ -75,11 +75,12 @@ self_assignable_role_message = (
 
 cleaning_up_stale_roles = (
     "Removing stale roles/descriptions from the bot database at this point if"
-    " exist."
+    " any exist."
 )
 
-name_colon = "name:"
-description_colon = "description:"
+
+def role_message(name, description):
+    return f"Role name: {name}\nRole description: {description}"
 
 
 def account_age(user_age, required_age):
