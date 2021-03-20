@@ -20,6 +20,14 @@ class Event(LoggingEventHandler):
         asyncio.set_event_loop(loop)
         bot.main()
 
+    # def on_created(self, event):
+    #     if self.bot_process is not None:
+    #         self.bot_process.terminate()
+    #     self.bot_process = multiprocessing.Process(
+    #         target=self.event_loop_wrapper, daemon=True
+    #     )
+    #     self.bot_process.start()
+
     def dispatch(self, event):
         logging.info(event)
         if self.bot_process is not None:
@@ -28,6 +36,13 @@ class Event(LoggingEventHandler):
             target=self.event_loop_wrapper, daemon=True
         )
         self.bot_process.start()
+
+
+def handle_exit(observer: Observer):
+    try:
+        observer.stop()
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
@@ -45,9 +60,12 @@ if __name__ == "__main__":
     observer = Observer()
     observer.schedule(event_handler, path, recursive=True)
     observer.start()
-    try:
-        while True:
+    while True:
+        try:
             time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+        except KeyboardInterrupt:
+            handle_exit(observer)
+            break
+        except Exception as e:
+            logging.exception(e)
+            handle_exit(observer)

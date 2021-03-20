@@ -118,3 +118,6 @@ deploy.ps1
 
 # vs
 .vs/
+
+# local poetry user config
+poetry.toml
