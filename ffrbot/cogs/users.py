@@ -67,7 +67,7 @@ class Users(commands.Cog):
         user.twitch_id = value
 
     @commands.command(aliases=["gettwitch", "gettwitchlink"])
-    async def get_twitch_link(self, ctx: commands.Context) -> None:
+    async def get_twitch_link(self, ctx: commands.Context):
         """
         Gets your twitch link or the twitch link for any mentioned members
         """
@@ -75,11 +75,9 @@ class Users(commands.Cog):
         msg: discord.Message = ctx.message
         mentions = msg.mentions
         if not mentions:
-            if self.get_user(ctx.author.id).twitch_id is not None:
-                await ctx.channel.send(
-                    "https://twitch.tv/"
-                    + self.get_user(ctx.author.id).twitch_id
-                )
+            twitch_id = self.get_user(ctx.author.id).twitch_id
+            if twitch_id is not None:
+                await ctx.channel.send("https://twitch.tv/" + twitch_id)
             else:
                 await ctx.channel.send(text.get_twitch_id_not_found)
 

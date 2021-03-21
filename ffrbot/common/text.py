@@ -79,16 +79,16 @@ cleaning_up_stale_roles = (
 )
 
 
-def role_message(name, description):
+def role_message(name: str, description: str) -> str:
     return f"Role name: {name}\nRole description: {description}"
 
 
-def account_age(user_age, required_age):
+def account_age(user_age: str, required_age: str) -> str:
     return (
         "this discord account is "
-        + str(user_age)
+        + user_age
         + " days old, your account must be at least "
-        + str(required_age)
+        + required_age
         + " days old."
     )
 
@@ -106,7 +106,7 @@ delete_user_data_yes_no = (
 )
 
 
-def list_people_no_twitch_id_set(names: List[str]):
+def list_people_no_twitch_id_set(names: List[str]) -> str:
     msg = "The following people don't have their twitch id set: "
     for name in names:
         msg += name + ", "
