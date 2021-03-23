@@ -20,7 +20,7 @@ from .common import config, constants
 from .common.redis_client import RedisClient
 
 
-def main():
+def main() -> None:
     logging.basicConfig(
         format="%(asctime)s %(levelname)-8s %(message)s",
         level=logging.INFO,

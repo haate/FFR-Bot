@@ -315,6 +315,7 @@ class Roles(commands.Cog):
         msg_id_role_id_map = self.db.get_str_dict(
             Namespace.ROLE_CONFIG, RoleKeys.MESSAGE_ID_ROLE_ID_MAP
         )
+
         if (
             str(payload.message_id) in msg_id_role_id_map.keys()
             and payload.user_id != self.bot.user.id

@@ -1,13 +1,14 @@
 from .redis_client import *
 from discord.ext.commands import Bot
 from discord import Guild
+from typing import *
 
 __db: RedisClient
 __bot: Bot
 __cache: Dict[Union[str, int], Any] = dict()
 
 
-def init(db, bot):
+def init(db: RedisClient, bot: Bot) -> None:
     global __db
     global __bot
     __db = db
@@ -18,7 +19,7 @@ def get_admin_role_ids() -> Set[str]:
     return __db.get_set(Namespace.ADMIN_CONFIG, AdminKeys.ROLE_IDS) or set()
 
 
-def set_admin_role_ids(new_admins: Iterable[str]):
+def set_admin_role_ids(new_admins: Iterable[str]) -> None:
     current_admins = get_admin_role_ids()
 
     __db.set_set(
@@ -34,7 +35,7 @@ def get_polls_category_id() -> int:
     )
 
 
-def set_polls_category_id(value: int):
+def set_polls_category_id(value: int) -> None:
     __db.set_str(Namespace.ADMIN_CONFIG, AdminKeys.POLLS_CATEGORY, str(value))
 
 
@@ -46,7 +47,7 @@ def get_role_requests_channel_id() -> int:
     return r_val
 
 
-def set_role_requests_channel_id(value: int):
+def set_role_requests_channel_id(value: int) -> None:
     __db.set_str(
         Namespace.ADMIN_CONFIG, AdminKeys.ROLE_REQUESTS_CHANNEL, str(value)
     )
@@ -58,7 +59,7 @@ def get_race_org_channel_id() -> int:
     )
 
 
-def set_race_org_channel_id(value: int):
+def set_race_org_channel_id(value: int) -> None:
     __db.set_str(Namespace.RACE_CONFIG, RaceKeys.ORG_CHANNEL_ID, str(value))
 
 
@@ -68,13 +69,13 @@ def get_race_results_channel_id() -> int:
     )
 
 
-def set_race_results_channel_id(value: int):
+def set_race_results_channel_id(value: int) -> None:
     __db.set_str(
         Namespace.RACE_CONFIG, RaceKeys.RESULTS_CHANNEL_ID, str(value)
     )
 
 
-def set_guild_id(value: int):
+def set_guild_id(value: int) -> None:
     __db.set_str(Namespace.ADMIN_CONFIG, AdminKeys.GUILD_ID, str(value))
 
 

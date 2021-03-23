@@ -51,8 +51,8 @@ Keys = Union[AdminKeys, RaceKeys, UserKeys, RoleKeys]
 
 def check_namespace_and_key(
     namespace: Namespace, key: Union[Keys, List[Keys]]
-):
-    def check(n, m):
+) -> None:
+    def check(n: Namespace, m: Keys) -> None:
         if n is Namespace.ADMIN_CONFIG:
             assert m in AdminKeys
         elif n is Namespace.RACE_CONFIG:
@@ -62,13 +62,19 @@ def check_namespace_and_key(
         elif n is Namespace.USER_CONFIG:
             assert m in UserKeys
         else:
-            logging.error("Missing Namespace in check_namespace_and_key")
+            logging.error(  # type: ignore
+                "Missing Namespace in check_namespace_and_key"
+            )
             raise Exception
 
-    check(namespace, key)
+    if isinstance(key, List):
+        for k in key:
+            check(namespace, k)
+    else:
+        check(namespace, key)
 
 
-def join(namespace, key) -> str:
+def join(namespace: Namespace, key: Keys) -> str:
     return str(namespace) + "_" + str(key)
 
 
@@ -78,11 +84,11 @@ class RedisClient:
         # returning str, but we have decode_responses=False which means
         # redis is returning bytes
         redis_pool = redis.ConnectionPool(
-            host=os.environ.get("REDIS_HOST", "localhost"),
+            host=os.environ.get("REDIS_HOST", "localhost"),  # type: ignore
             port=int(os.environ.get("REDIS_PORT", "6379")),
             decode_responses=False,
         )
-        db = redis.Redis(connection_pool=redis_pool)
+        db: redis.Redis = redis.Redis(connection_pool=redis_pool)
         logging.info(db.info())
         self.__db = db
 
@@ -200,13 +206,11 @@ class RedisClient:
         [self.__db.srem(join(namespace, key), x) for x in to_remove]
         [self.__db.sadd(join(namespace, key), x) for x in to_add]
 
-    def get_int_set(
-        self, namespace: Namespace, key: Keys
-    ) -> Optional[Set[int]]:
+    def get_int_set(self, namespace: Namespace, key: Keys) -> Set[int]:
         check_namespace_and_key(namespace, key)
         return set(
             [
-                x.decode("utf-8")
+                int(x.decode("utf-8"))
                 for x in self.__db.smembers(join(namespace, key))
             ]
         )
