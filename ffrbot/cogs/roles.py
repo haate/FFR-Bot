@@ -46,7 +46,7 @@ class Roles(commands.Cog):
 
             descriptions.append(args[2 * i + 1])
 
-        async def add_roles():
+        async def add_roles() -> None:
             current_role_ids = self.db.get_set(
                 Namespace.ROLE_CONFIG,
                 RoleKeys.ROLE_IDS,
@@ -84,7 +84,7 @@ class Roles(commands.Cog):
             )
             await ctx.channel.send(text.roles_added)
 
-        async def no_change():
+        async def no_change() -> None:
             await ctx.channel.send(text.roles_not_added)
 
         question = text.roles_look_ok_added + "\n"

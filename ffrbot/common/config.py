@@ -88,8 +88,10 @@ def get_guild_id() -> int:
 def get_guild() -> Guild:
     guild_id = get_guild_id()
     if guild_id in __cache.keys():
-        return __cache[guild_id]
+        return cast(Guild, __cache[guild_id])
     else:
-        guild = __bot.get_guild(int(get_guild_id()))
+        # we cast here since we assert that the bot is in a guild
+        guild = cast(Guild, __bot.get_guild(int(get_guild_id())))
+        assert guild is not None
         __cache[guild_id] = guild
         return guild

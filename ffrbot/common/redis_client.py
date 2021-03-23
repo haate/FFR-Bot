@@ -5,6 +5,8 @@ import pickle
 from typing import *
 from enum import Enum, unique
 
+from typing import Set
+
 
 @unique
 class Namespace(Enum):
@@ -84,7 +86,7 @@ class RedisClient:
         # returning str, but we have decode_responses=False which means
         # redis is returning bytes
         redis_pool = redis.ConnectionPool(
-            host=os.environ.get("REDIS_HOST", "localhost"),  # type: ignore
+            host=os.environ.get("REDIS_HOST", "localhost"),
             port=int(os.environ.get("REDIS_PORT", "6379")),
             decode_responses=False,
         )
@@ -92,9 +94,7 @@ class RedisClient:
         logging.info(db.info())
         self.__db = db
 
-    def set_str(
-        self, namespace: Namespace, key: Union[Keys, List[Keys]], value: str
-    ) -> None:
+    def set_str(self, namespace: Namespace, key: Keys, value: str) -> None:
         check_namespace_and_key(namespace, key)
         self.__db.set(join(namespace, key), value)
 
@@ -126,7 +126,9 @@ class RedisClient:
 
     def get_str_dict(self, namespace: Namespace, key: Keys) -> Dict[str, str]:
         check_namespace_and_key(namespace, key)
-        k_v_pairs = self.__db.hgetall(join(namespace, key))
+        k_v_pairs: Optional[Dict[bytes, bytes]] = self.__db.hgetall(
+            join(namespace, key)
+        )
         if k_v_pairs is not None:
             return_value = dict()
             for k, v in k_v_pairs.items():
@@ -146,7 +148,7 @@ class RedisClient:
     ) -> Optional[str]:
         logging.info(namespace)
         check_namespace_and_key(namespace, key)
-        v: bytes = self.__db.hget(join(namespace, key), item_key)
+        v: Optional[bytes] = self.__db.hget(join(namespace, key), item_key)
         return v.decode("utf-8") if v else None
 
     def del_str_dict_item(
@@ -181,9 +183,11 @@ class RedisClient:
         self, namespace: Namespace, key: Keys, new: Iterable[str]
     ) -> None:
         check_namespace_and_key(namespace, key)
-        current = self.__db.smembers(join(namespace, key))
-        to_remove = [x for x in current if x not in new]
-        to_add = [x for x in new if x not in current]
+        current: Set[bytes] = (
+            cast(Set[bytes], self.__db.smembers(join(namespace, key))) or set()
+        )
+        to_remove = [x for x in current if x.decode("utf-8") not in new]
+        to_add = [x for x in new if x.encode("utf-8") not in current]
         [self.__db.srem(join(namespace, key), x) for x in to_remove]
         [self.__db.sadd(join(namespace, key), x) for x in to_add]
 
@@ -191,7 +195,7 @@ class RedisClient:
         check_namespace_and_key(namespace, key)
         return set(
             [
-                x.decode("utf-8")
+                cast(bytes, x).decode("utf-8")
                 for x in self.__db.smembers(join(namespace, key))
             ]
         )
@@ -200,9 +204,11 @@ class RedisClient:
         self, namespace: Namespace, key: Keys, new: Iterable[int]
     ) -> None:
         check_namespace_and_key(namespace, key)
-        current = self.__db.smembers(join(namespace, key))
-        to_remove = [x for x in current if str(x) not in new]
-        to_add = [x for x in new if x not in current]
+        current: Set[bytes] = (
+            cast(Set[bytes], self.__db.smembers(join(namespace, key))) or set()
+        )
+        to_remove = [x for x in current if int(x.decode("utf-8")) not in new]
+        to_add = [x for x in new if str(x).encode("utf-8") not in current]
         [self.__db.srem(join(namespace, key), x) for x in to_remove]
         [self.__db.sadd(join(namespace, key), x) for x in to_add]
 
@@ -210,7 +216,7 @@ class RedisClient:
         check_namespace_and_key(namespace, key)
         return set(
             [
-                int(x.decode("utf-8"))
+                int(cast(bytes, x).decode("utf-8"))
                 for x in self.__db.smembers(join(namespace, key))
             ]
         )
