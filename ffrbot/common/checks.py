@@ -1,13 +1,12 @@
 from discord.ext import commands
 import discord
 from . import config, constants
-from typing import TYPE_CHECKING
+from typing import *
 
-if TYPE_CHECKING:
-    from discord.ext.commands.core import _CheckDecorator
+RT = TypeVar("RT")  # return type
 
 
-def is_admin() -> _CheckDecorator:
+def is_admin() -> Callable[..., RT]:
     """
     Checks if the user is an admin (from the admin roles in the config)
      or the bot admin
@@ -25,7 +24,8 @@ def is_admin() -> _CheckDecorator:
     return commands.check(predicate)
 
 
-def is_bot_admin() -> _CheckDecorator:
+def is_bot_admin() -> Callable[..., RT]:
+
     """
     Checks if the user is the bot admin.
     """
@@ -37,7 +37,8 @@ def is_bot_admin() -> _CheckDecorator:
     return commands.check(predicate)
 
 
-def is_role_requests_channel() -> _CheckDecorator:
+def is_role_requests_channel() -> Callable[..., RT]:
+
     """
     Checks if the channel the command was executed in is the role requests
     channel.

@@ -1,48 +1,18 @@
 from discord.ext import commands
-from ffrbot.common import constants
 import discord
-from ffrbot.common import config
-from ffrbot.common import text
+from typing import *
+from ..common import config, text, constants, checks
 import logging
 
 
-# define our checks for the config again since we cannot import checks.py as
-# it causes a circular import
-def is_admin():
-    """
-    Checks if the user is an admin (from the admin roles in the config)
-    or the bot admin
-    """
-
-    async def predicate(ctx: commands.Context):
-        user = ctx.author
-        return (
-            any(role.id in config.get_admin_role_ids() for role in user.roles)
-            or user.id == constants.BOT_ADMIN_ID
-        )
-
-    return commands.check(predicate)
-
-
-def is_bot_admin():
-    """
-    Checks if the user is the bot admin.
-    """
-
-    async def predicate(ctx: commands.Context) -> bool:
-        user = ctx.author
-        return user.id == constants.BOT_ADMIN_ID
-
-    return commands.check(predicate)
-
-
 class ConfigCommands(commands.Cog):
-    def __init__(self, bot):
-        self.bot: commands.Bot = bot
+    def __init__(self, bot: commands.Bot) -> None:
+        self.bot = bot
 
     @commands.command()
-    @is_bot_admin()
-    async def add_admin_roles(self, ctx: commands.Context):
+    @checks.is_bot_admin()
+    @commands.guild_only()
+    async def add_admin_roles(self, ctx: commands.Context) -> None:
         """
         Adds all pinged roles to the admin roles list
         """
@@ -51,84 +21,100 @@ class ConfigCommands(commands.Cog):
         msg: discord.Message = ctx.message
         new_roles = [x.id for x in msg.role_mentions]
         logging.info("new admin role ids: " + str(new_roles))
-        config.set_admin_role_ids(
-            config.get_admin_role_ids().union(str(new_roles))
-        )
+        config.set_admin_role_ids(config.get_admin_role_ids().union(new_roles))
         logging.info(
             "new admins:\n"
             + repr([str(x) for x in config.get_admin_role_ids()])
         )
-        channel: discord.TextChannel = ctx.channel
-        guild: discord.Guild = ctx.guild
+        channel = cast(discord.TextChannel, ctx.channel)
+        guild = cast(discord.Guild, ctx.guild)
         send_msg = "admins:\n" + ", ".join(
             [
-                guild.get_role(int(x)).mention
-                for x in config.get_admin_role_ids()
+                role.mention
+                for role in (
+                    cast(discord.Role, guild.get_role(x))
+                    for x in config.get_admin_role_ids()
+                    if guild.get_role(x) is not None
+                )
             ]
         )
         await channel.send(send_msg)
 
     @commands.command()
-    @is_bot_admin()
-    async def remove_admin_roles(self, ctx: commands.Context):
+    @checks.is_bot_admin()
+    @commands.guild_only()
+    async def remove_admin_roles(self, ctx: commands.Context) -> None:
         """
         Removes all pinged roles from the admin roles list
         """
         logging.info("removing from the admins roles list")
         logging.info("old admins:\n" + repr(config.get_admin_role_ids()))
         msg: discord.Message = ctx.message
-        remove_roles = [str(x.id) for x in msg.role_mentions]
+        remove_roles = [x.id for x in msg.role_mentions]
         config.set_admin_role_ids(
             config.get_admin_role_ids() - set(remove_roles)
         )
         logging.info("new admins:\n" + repr(config.get_admin_role_ids()))
-        channel: discord.TextChannel = ctx.channel
-        guild: discord.Guild = ctx.guild
+        channel = cast(discord.TextChannel, ctx.channel)
+        guild = cast(discord.Guild, ctx.guild)
         send_msg = "admins:\n" + ", ".join(
             [
-                guild.get_role(int(x)).mention
-                for x in config.get_admin_role_ids()
+                role.mention
+                for role in (
+                    cast(discord.Role, guild.get_role(x))
+                    for x in config.get_admin_role_ids()
+                    if guild.get_role(x) is not None
+                )
             ]
         )
         await channel.send(send_msg)
 
-    @is_admin()
+    @checks.is_admin()
     @commands.command()
-    async def list_admin_roles(self, ctx: commands.Context):
+    @commands.guild_only()
+    async def list_admin_roles(self, ctx: commands.Context) -> None:
         """
         List all current roles on the admin roles list
         """
-        channel: discord.TextChannel = ctx.channel
-        guild: discord.Guild = ctx.guild
+        channel = cast(discord.TextChannel, ctx.channel)
+        guild = cast(discord.Guild, ctx.guild)
         msg = "admins:\n" + ", ".join(
             [
-                guild.get_role(int(x)).mention
-                for x in config.get_admin_role_ids()
+                role.mention
+                for role in (
+                    cast(discord.Role, guild.get_role(x))
+                    for x in config.get_admin_role_ids()
+                    if guild.get_role(x) is not None
+                )
             ]
         )
         await channel.send(msg)
 
     @commands.command()
-    async def set_polls_category(self, ctx: commands.Context):
+    @commands.guild_only()
+    async def set_polls_category(self, ctx: commands.Context) -> None:
         """
         Sets the polls category to the category of the current channel
         """
 
-        category: discord.CategoryChannel = ctx.channel.category
+        category = cast(discord.TextChannel, ctx.channel).category
         if category is None:
             await ctx.channel.send(text.category_not_found)
-            return
-
-        config.set_polls_category_id(category.id)
+        else:
+            config.set_polls_category_id(category.id)
 
     @commands.command()
-    @is_admin()
-    async def set_race_org_channel(self, ctx: commands.Context):
+    @checks.is_admin()
+    @commands.guild_only()
+    async def set_race_org_channel(self, ctx: commands.Context) -> None:
         """
         Sets the current channel as the race organization channel
 
         All (sync and async) races must be started from this channel
         """
+
+        assert isinstance(ctx.channel, discord.TextChannel)
+
         logging.info(
             "setting the race organization channel, "
             + "channel name: "
@@ -140,13 +126,17 @@ class ConfigCommands(commands.Cog):
         config.set_race_org_channel_id(ctx.channel.id)
 
     @commands.command()
-    @is_admin()
-    async def set_race_results_channel(self, ctx: commands.Context):
+    @checks.is_admin()
+    @commands.guild_only()
+    async def set_race_results_channel(self, ctx: commands.Context) -> None:
         """
         Sets the current channel as the race results channel
 
         All (sync and async) race results will be posted here
         """
+
+        assert isinstance(ctx.channel, discord.TextChannel)
+
         logging.info(
             "setting the race results channel, "
             + "channel name: "
@@ -157,13 +147,16 @@ class ConfigCommands(commands.Cog):
         config.set_race_results_channel_id(ctx.channel.id)
 
     @commands.command()
-    @is_admin()
-    async def set_role_requests_channel(self, ctx: commands.Context):
+    @checks.is_admin()
+    @commands.guild_only()
+    async def set_role_requests_channel(self, ctx: commands.Context) -> None:
         """
         Sets the current channel as the role requests channel
 
         All role related commands will need to be run here
         """
+
+        assert isinstance(ctx.channel, discord.TextChannel)
 
         logging.info(
             "setting the role requests channel, "

@@ -11,6 +11,7 @@ python = "^3.8"
 redis = "^3.5.3"
 "discord.py-stubs" = "^1.6.0"
 asyncio = "^3.4.3"
+discord-ext-typed-commands = "^1.0.3"
 
 [tool.poetry.dev-dependencies]
 watchdog = "^2.0.2"

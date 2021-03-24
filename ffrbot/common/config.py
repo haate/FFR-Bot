@@ -21,7 +21,7 @@ def get_admin_role_ids() -> Set[int]:
     )
 
 
-def set_admin_role_ids(new_admins: Iterable[str]) -> None:
+def set_admin_role_ids(new_admins: Iterable[int]) -> None:
     current_admins = get_admin_role_ids()
 
     __db.set_int_set(

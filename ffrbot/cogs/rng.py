@@ -10,11 +10,11 @@ class RNG(commands.Cog):
     RNG commands, helps making a decision in a pinch
     """
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
 
     @commands.command()
-    async def roll(self, ctx, dice):
+    async def roll(self, ctx: commands.Context, dice: str) -> None:
         """
         Simulates a dice roll in the form [N]dM. e.g ?roll 3d6, or ?roll d8
         """
@@ -36,7 +36,7 @@ class RNG(commands.Cog):
         await ctx.message.channel.send(text_result)
 
     @commands.command()
-    async def coin(self, ctx):
+    async def coin(self, ctx: commands.Context) -> None:
         """
         Simulates a coin flip.
         """

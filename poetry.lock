@@ -94,6 +94,17 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "discord-ext-typed-commands"
+version = "1.0.3"
+description = "Typed commands for discord.py"
+category = "main"
+optional = false
+python-versions = ">=3.6.1,<4.0.0"
+
+[package.dependencies]
+"discord.py" = ">=1.4.1,<2.0.0"
+
+[[package]]
 name = "discord.py"
 version = "1.6.0"
 description = "A Python wrapper for the Discord API"
@@ -238,7 +249,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "d37fa466ff9056d00caffc0fc2ad60e526f34f4b1020f6597119f6aa4b070d0f"
+content-hash = "04aaf6b1c73f3b76869b89341ef751c2e7dfbda06bdbb567a5ed2b4585901505"
 
 [metadata.files]
 aiohttp = [
@@ -308,6 +319,10 @@ chardet = [
 click = [
     {file = "click-7.1.2-py2.py3-none-any.whl", hash = "sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc"},
     {file = "click-7.1.2.tar.gz", hash = "sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a"},
+]
+discord-ext-typed-commands = [
+    {file = "discord-ext-typed-commands-1.0.3.tar.gz", hash = "sha256:9bffb46dfc93b50356624bfe7756a4f0dad3a8933ffc160c9a44babaa7bc194d"},
+    {file = "discord_ext_typed_commands-1.0.3-py3-none-any.whl", hash = "sha256:8d19e01bef9b256df7506d735ca7a42e4ecb49f8a68fc4536d4221e1921d8c5c"},
 ]
 "discord.py" = [
     {file = "discord.py-1.6.0-py3-none-any.whl", hash = "sha256:3df148daf6fbcc7ab5b11042368a3cd5f7b730b62f09fb5d3cbceff59bcfbb12"},

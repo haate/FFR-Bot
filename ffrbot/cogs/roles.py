@@ -9,19 +9,23 @@ from ..common.redis_client import RedisClient, Namespace, RoleKeys
 
 
 class Roles(commands.Cog):
-    def __init__(self, bot, db):
-        self.bot: commands.Bot = bot
-        self.db: RedisClient = db
+    def __init__(self, bot: commands.Bot, db: RedisClient) -> None:
+        self.bot = bot
+        self.db = db
 
     @commands.command(aliases=["asar"])
     @checks.is_admin()
-    async def add_self_assignable_role(self, ctx: commands.Context, *args):
+    @commands.guild_only()
+    async def add_self_assignable_role(
+        self, ctx: commands.Context, *args: str
+    ) -> None:
         """
         Adds to the self assignable roles. ?asar "role name" "description".
         Can add multiple at once.
         """
+        assert isinstance(ctx.guild, discord.Guild)
 
-        guild: discord.Guild = ctx.guild
+        guild = ctx.guild
         descriptions: List[str] = []
         roles: List[discord.Role] = []
 
@@ -31,7 +35,7 @@ class Roles(commands.Cog):
             return
 
         for i in range(len(args) // 2):
-            role_name = args[2 * i]
+            role_name: str = args[2 * i]
             try:
                 role = [
                     role for role in guild.roles if role.name == role_name
@@ -100,17 +104,23 @@ class Roles(commands.Cog):
 
     @commands.command(aliases=["rsar"])
     @checks.is_admin()
-    async def remove_self_assignable_role(self, ctx: commands.Context, *args):
+    @commands.guild_only()
+    async def remove_self_assignable_role(
+        self, ctx: commands.Context, *args: str
+    ) -> None:
         """
         Removes from the self assignable roles. ?rsar "role name".
         Can remove multiple at once.
         """
+        assert isinstance(ctx.guild, discord.Guild)
 
         guild: discord.Guild = ctx.guild
         roles: List[discord.Role] = []
 
         for role_name in args:
-            role = [role for role in guild.roles if role.name == role_name][0]
+            role: Optional[discord.Role] = [
+                role for role in guild.roles if role.name == role_name
+            ][0]
             if role is None:
                 await ctx.author.send(
                     'could not find the role named: "' + role_name + '"'
@@ -119,7 +129,7 @@ class Roles(commands.Cog):
                 raise Exception("couldn't find role name: " + role_name)
             roles.append(role)
 
-        async def remove_roles():
+        async def remove_roles() -> None:
             current_role_ids = self.db.get_set(
                 Namespace.ROLE_CONFIG,
                 RoleKeys.ROLE_IDS,
@@ -140,7 +150,7 @@ class Roles(commands.Cog):
 
             await ctx.channel.send(text.roles_removed)
 
-        async def no_change():
+        async def no_change() -> None:
             await ctx.channel.send(text.roles_not_removed)
 
         question = text.roles_look_ok_removed + "\n"
@@ -153,11 +163,14 @@ class Roles(commands.Cog):
 
     @commands.command(aliases=["lsar"])
     @checks.is_admin()
-    async def list_roles(self, ctx: commands.Context):
+    @commands.guild_only()
+    async def list_roles(self, ctx: commands.Context) -> None:
         """
         Lists all self assignable roles.
         ?lsar
         """
+
+        assert isinstance(ctx.guild, discord.Guild)
 
         role_ids: Set[str] = (
             self.db.get_set(Namespace.ROLE_CONFIG, RoleKeys.ROLE_IDS) or set()
@@ -205,12 +218,15 @@ class Roles(commands.Cog):
 
     @commands.command(aliases=["grp"])
     @checks.is_admin()
-    async def generate_role_posts(self, ctx: commands.Context):
+    @commands.guild_only()
+    async def generate_role_posts(self, ctx: commands.Context) -> None:
         """
         Generates, or regenerates the bot posts in role requests after
         the self assignable roles are updated.
         ?grp
         """
+
+        assert isinstance(ctx.guild, discord.Guild)
 
         role_ids: Set[str] = (
             self.db.get_set(Namespace.ROLE_CONFIG, RoleKeys.ROLE_IDS) or set()
@@ -224,9 +240,10 @@ class Roles(commands.Cog):
             or dict()
         )
 
-        role_requests_channel: Optional[
-            discord.TextChannel
-        ] = ctx.guild.get_channel(config.get_role_requests_channel_id())
+        role_requests_channel = cast(
+            Optional[discord.TextChannel],
+            ctx.guild.get_channel(config.get_role_requests_channel_id()),
+        )
 
         if role_requests_channel is None:
             await ctx.author.send(text.role_requests_channel_not_set)
@@ -310,7 +327,7 @@ class Roles(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(
         self, payload: discord.RawReactionActionEvent
-    ):
+    ) -> None:
 
         msg_id_role_id_map = self.db.get_str_dict(
             Namespace.ROLE_CONFIG, RoleKeys.MESSAGE_ID_ROLE_ID_MAP
@@ -320,19 +337,28 @@ class Roles(commands.Cog):
             str(payload.message_id) in msg_id_role_id_map.keys()
             and payload.user_id != self.bot.user.id
         ):
-            guild = self.bot.get_guild(payload.guild_id)
+            guild = self.bot.get_guild(payload.guild_id or -1)
+            if guild is None or payload.channel_id is None:
+                return
             role = guild.get_role(
                 int(msg_id_role_id_map[str(payload.message_id)])
             )
+            if role is None:
+                return
 
             user = guild.get_member(payload.user_id)
+            if user is None:
+                return
+
             user_roles = user.roles
             if role not in user_roles:
                 await user.add_roles(role)
             else:
                 await user.remove_roles(role)
 
-            channel = self.bot.get_channel(payload.channel_id)
+            channel = cast(
+                discord.TextChannel, self.bot.get_channel(payload.channel_id)
+            )
             msg = await channel.fetch_message(payload.message_id)
 
             await msg.remove_reaction("✔", user)

@@ -2,6 +2,7 @@ from ..common import constants, checks, config, snippits
 from ..common.redis_client import RedisClient
 
 from discord.ext import commands
+from typing import *
 import discord
 
 import logging
@@ -17,6 +18,7 @@ class Core(commands.Cog):
         self.db: RedisClient = db
 
     @commands.command()
+    @commands.guild_only()
     @checks.is_bot_admin()
     async def init_guild(self, ctx: commands.Context) -> None:
         """
@@ -24,14 +26,14 @@ class Core(commands.Cog):
         used in.
         """
         logging.info("initializing bot in guild.")
-        guild: discord.Guild = ctx.guild
+        guild: discord.Guild = cast(discord.Guild, ctx.guild)
 
-        async def yes():
+        async def yes() -> None:
 
             config.set_guild_id(guild.id)
             logging.info("Guild set to: " + guild.name)
 
-        async def no():
+        async def no() -> None:
             logging.info("Guild not set.")
 
         if config.get_guild() is None:
@@ -48,13 +50,15 @@ class Core(commands.Cog):
 
     @commands.command()
     @checks.is_bot_admin()
-    async def purge(self, ctx: commands.Context):
+    async def purge(self, ctx: commands.Context) -> None:
         """
         Clears the channel history -- for testing
         """
 
-        async def yes():
-            await ctx.channel.purge(limit=100000)
+        async def yes() -> None:
+            channel = ctx.channel
+            if isinstance(channel, discord.TextChannel):
+                await channel.purge(limit=100000)
 
         await snippits.wait_for_yes_no(
             self.bot,
@@ -65,7 +69,7 @@ class Core(commands.Cog):
         )
 
     @commands.command(aliases=["whoami"])
-    async def who_am_i(self, ctx: commands.Context):
+    async def who_am_i(self, ctx: commands.Context) -> None:
         """
         Messages you your discord user id
         """
@@ -73,7 +77,7 @@ class Core(commands.Cog):
         await ctx.message.delete()
 
     @commands.command()
-    async def version(self, ctx: commands.Context):
+    async def version(self, ctx: commands.Context) -> None:
         """
         Messages you the version of the bot
         """
