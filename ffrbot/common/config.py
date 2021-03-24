@@ -15,17 +15,19 @@ def init(db: RedisClient, bot: Bot) -> None:
     __bot = bot
 
 
-def get_admin_role_ids() -> Set[str]:
-    return __db.get_set(Namespace.ADMIN_CONFIG, AdminKeys.ROLE_IDS) or set()
+def get_admin_role_ids() -> Set[int]:
+    return (
+        __db.get_int_set(Namespace.ADMIN_CONFIG, AdminKeys.ROLE_IDS) or set()
+    )
 
 
 def set_admin_role_ids(new_admins: Iterable[str]) -> None:
     current_admins = get_admin_role_ids()
 
-    __db.set_set(
+    __db.set_int_set(
         Namespace.ADMIN_CONFIG,
         AdminKeys.ROLE_IDS,
-        current_admins.union(set(new_admins)),
+        current_admins.union(set([int(admin_id) for admin_id in new_admins])),
     )
 
 
