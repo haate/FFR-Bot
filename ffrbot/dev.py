@@ -7,11 +7,6 @@ from watchdog.events import LoggingEventHandler  # type: ignore
 import multiprocessing
 from typing import *
 
-try:
-    from . import bot
-except Exception:
-    pass
-
 
 class Event(LoggingEventHandler):  # type: ignore
     def __init__(self, process: Optional[multiprocessing.Process] = None):
@@ -22,7 +17,8 @@ class Event(LoggingEventHandler):  # type: ignore
         if "bot" not in sys.modules:
             try:
                 from . import bot
-            except Exception:
+            except Exception as e:
+                logging.exception(e)
                 return
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -37,7 +33,8 @@ class Event(LoggingEventHandler):  # type: ignore
                 target=self.event_loop_wrapper, daemon=True
             )
             self.bot_process.start()
-        except Exception:
+        except Exception as e:
+            logging.exception(e)
             pass
 
 
@@ -54,21 +51,22 @@ if __name__ == "__main__":
         level=logging.INFO,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    if "bot" not in sys.modules:
-        try:
-            from . import bot
-        except Exception:
-            pass
+
+    try:
+        from . import bot
+    except Exception as e:
+        logging.exception(e)
+        pass
 
     bot_process = None
-    if "bot" in sys.modules:
-        try:
-            bot_process: multiprocessing.Process = multiprocessing.Process(
-                target=bot.main, daemon=True
-            )
-            bot_process.start()
-        except Exception:
-            pass
+    try:
+        bot_process: multiprocessing.Process = multiprocessing.Process(
+            target=bot.main, daemon=True
+        )
+        bot_process.start()
+    except Exception as e:
+        logging.exception(e)
+        pass
     path = sys.argv[1] if len(sys.argv) > 1 else "./ffrbot"
     if bot_process is not None:
         event_handler = Event(bot_process)

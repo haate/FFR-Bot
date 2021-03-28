@@ -121,3 +121,7 @@ deploy.ps1
 
 # local poetry user config
 poetry.toml
+
+
+# mongo data
+.data/

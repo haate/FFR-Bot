@@ -3,6 +3,7 @@ from discord.ext.commands import Bot
 import discord
 from typing import *
 from pymongo import MongoClient
+from .mongo_classes import *
 import logging
 
 __db: MongoClient
@@ -22,26 +23,36 @@ def init_guild(guild: discord.Guild) -> None:
     config = {
         "id": guild.id,
     }
-    configs.insert_one(config)
+    logging.info(config)
+    id = configs.insert_one(config)
+    logging.info(id)
 
 
-def get_guild_config(guild_id: int) -> int:
+def get_guild_config(guild_id: int) -> GuildConfig:
     config = __db.guilds.configs.find_one({"id": guild_id})
     logging.info(config)
-    return int(config.id)
+    return config
 
 
-def get_admin_role_ids(guild_id: int) -> Set[int]:
-    return __db.guilds
+def get_admin_role_ids(guild_id: int) -> List[int]:
+    try:
+        ids = get_guild_config(guild_id)["admin_role_ids"]
+    except KeyError:
+        ids = []
+    return ids
 
 
-def set_admin_role_ids(new_admins: Iterable[int]) -> None:
-    current_admins = get_admin_role_ids()
+def add_admin_role_ids(guild_id: int, new_admins: List[int]) -> None:
+    __db.guilds.configs.update_one(
+        {"id": guild_id},
+        {"$addToSet": {"admin_role_ids": {"$each": new_admins}}},
+    )
 
-    __db.set_int_set(
-        Namespace.ADMIN_CONFIG,
-        AdminKeys.ROLE_IDS,
-        current_admins.union(set([int(admin_id) for admin_id in new_admins])),
+
+def remove_admin_role_ids(guild_id: int, stale_admins: List[int]) -> None:
+    __db.guilds.configs.update_one(
+        {"id": guild_id},
+        {"$pullAll": {"admin_role_ids": stale_admins}},
     )
 
 
@@ -101,13 +112,13 @@ def get_guild_id() -> int:
     )
 
 
-def get_guild() -> Guild:
+def get_guild() -> discord.Guild:
     guild_id = get_guild_id()
     if guild_id in __cache.keys():
-        return cast(Guild, __cache[guild_id])
+        return cast(discord.Guild, __cache[guild_id])
     else:
         # we cast here since we assert that the bot is in a guild
-        guild = cast(Guild, __bot.get_guild(int(get_guild_id())))
+        guild = cast(discord.Guild, __bot.get_guild(int(get_guild_id())))
         assert guild is not None
         __cache[guild_id] = guild
         return guild

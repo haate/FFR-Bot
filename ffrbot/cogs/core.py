@@ -31,6 +31,12 @@ class Core(commands.Cog):
         config.init_guild(guild)
 
     @commands.command()
+    async def gc(self, ctx: commands.Context) -> None:
+        c = config.get_guild_config(ctx.guild.id)
+        logging.info(c)
+        await ctx.channel.send(c)
+
+    @commands.command()
     @checks.is_bot_admin()
     async def purge(self, ctx: commands.Context) -> None:
         """

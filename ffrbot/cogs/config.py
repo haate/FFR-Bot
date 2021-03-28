@@ -16,24 +16,25 @@ class ConfigCommands(commands.Cog):
         """
         Adds all pinged roles to the admin roles list
         """
+        guild = cast(discord.Guild, ctx.guild)
         logging.info("adding to the admins roles list")
-        logging.info("old admins:\n" + repr(config.get_admin_role_ids()))
+        logging.info(
+            "old admins:\n" + repr(config.get_admin_role_ids(guild.id))
+        )
         msg: discord.Message = ctx.message
         new_roles = [x.id for x in msg.role_mentions]
         logging.info("new admin role ids: " + str(new_roles))
-        config.set_admin_role_ids(config.get_admin_role_ids().union(new_roles))
-        logging.info(
-            "new admins:\n"
-            + repr([str(x) for x in config.get_admin_role_ids()])
+        config.add_admin_role_ids(
+            guild.id,
+            new_roles,
         )
         channel = cast(discord.TextChannel, ctx.channel)
-        guild = cast(discord.Guild, ctx.guild)
         send_msg = "admins:\n" + ", ".join(
             [
                 role.mention
                 for role in (
                     cast(discord.Role, guild.get_role(x))
-                    for x in config.get_admin_role_ids()
+                    for x in config.get_admin_role_ids(guild.id)
                     if guild.get_role(x) is not None
                 )
             ]
@@ -47,22 +48,23 @@ class ConfigCommands(commands.Cog):
         """
         Removes all pinged roles from the admin roles list
         """
+        guild = cast(discord.Guild, ctx.guild)
         logging.info("removing from the admins roles list")
-        logging.info("old admins:\n" + repr(config.get_admin_role_ids()))
+        logging.info(
+            "old admins:\n" + repr(config.get_admin_role_ids(guild.id))
+        )
         msg: discord.Message = ctx.message
         remove_roles = [x.id for x in msg.role_mentions]
-        config.set_admin_role_ids(
-            config.get_admin_role_ids() - set(remove_roles)
-        )
-        logging.info("new admins:\n" + repr(config.get_admin_role_ids()))
+        config.remove_admin_role_ids(guild.id, remove_roles)
+        new_admin_ids = config.get_admin_role_ids(guild.id)
+        logging.info("new admins:\n" + repr(new_admin_ids))
         channel = cast(discord.TextChannel, ctx.channel)
-        guild = cast(discord.Guild, ctx.guild)
         send_msg = "admins:\n" + ", ".join(
             [
                 role.mention
                 for role in (
                     cast(discord.Role, guild.get_role(x))
-                    for x in config.get_admin_role_ids()
+                    for x in new_admin_ids
                     if guild.get_role(x) is not None
                 )
             ]

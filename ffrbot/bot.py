@@ -9,12 +9,13 @@ from pymongo import MongoClient
 import os
 
 
-from .cogs.racing.races import Races
-from .cogs.roles import Roles
+# from .cogs.racing.races import Races
+# from .cogs.roles import Roles
 from .cogs.core import Core
-from .cogs.voting.polls import Polls
-from .cogs.rng import RNG
-from .cogs.users import Users
+
+# from .cogs.voting.polls import Polls
+# from .cogs.rng import RNG
+# from .cogs.users import Users
 from .cogs.config import ConfigCommands
 
 
@@ -27,10 +28,13 @@ def main() -> None:
         level=logging.INFO,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+    logging.info("started")
 
     db = MongoClient(
         os.environ.get("MONGO_HOST", "localhost"),
         int(os.environ.get("MONGO_PORT", 27017)),
+        username=os.environ.get("MONGO_USER", "admin"),
+        password=os.environ.get("MONGO_PASS", "password"),
     )
 
     intents = discord.Intents.default()
