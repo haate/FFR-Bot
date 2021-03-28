@@ -28,25 +28,7 @@ class Core(commands.Cog):
         logging.info("initializing bot in guild.")
         guild: discord.Guild = cast(discord.Guild, ctx.guild)
 
-        async def yes() -> None:
-
-            config.set_guild_id(guild.id)
-            logging.info("Guild set to: " + guild.name)
-
-        async def no() -> None:
-            logging.info("Guild not set.")
-
-        if config.get_guild() is None:
-            await yes()
-        else:
-            await snippits.wait_for_yes_no(
-                self.bot,
-                ctx,
-                f"Guild already set to {guild.name} with owner: {guild.owner},"
-                f" are you sure you want to overwrite it?",
-                yes,
-                no,
-            )
+        config.init_guild(guild)
 
     @commands.command()
     @checks.is_bot_admin()

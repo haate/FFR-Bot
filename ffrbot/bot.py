@@ -5,6 +5,8 @@ import time
 
 import discord
 from discord.ext import commands
+from pymongo import MongoClient
+import os
 
 
 from .cogs.racing.races import Races
@@ -17,7 +19,6 @@ from .cogs.config import ConfigCommands
 
 
 from .common import config, constants
-from .common.redis_client import RedisClient
 
 
 def main() -> None:
@@ -27,7 +28,10 @@ def main() -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    db = RedisClient()
+    db = MongoClient(
+        os.environ.get("MONGO_HOST", "localhost"),
+        int(os.environ.get("MONGO_PORT", 27017)),
+    )
 
     intents = discord.Intents.default()
     intents.members = True
@@ -46,11 +50,11 @@ def main() -> None:
     logging.info("initializing bot.")
 
     bot.add_cog(Core(bot, db))
-    bot.add_cog(Races(bot, db))
-    bot.add_cog(Roles(bot, db))
-    bot.add_cog(Polls(bot, db))
-    bot.add_cog(RNG(bot))
-    bot.add_cog(Users(bot, db))
+    # bot.add_cog(Races(bot, db))
+    # bot.add_cog(Roles(bot, db))
+    # bot.add_cog(Polls(bot, db))
+    # bot.add_cog(RNG(bot))
+    # bot.add_cog(Users(bot, db))
     bot.add_cog(ConfigCommands(bot))
 
     @bot.event

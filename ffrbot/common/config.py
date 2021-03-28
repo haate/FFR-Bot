@@ -1,24 +1,38 @@
 from .redis_client import *
 from discord.ext.commands import Bot
-from discord import Guild
+import discord
 from typing import *
+from pymongo import MongoClient
+import logging
 
-__db: RedisClient
+__db: MongoClient
 __bot: Bot
 __cache: Dict[Union[str, int], Any] = dict()
 
 
-def init(db: RedisClient, bot: Bot) -> None:
+def init(db: MongoClient, bot: Bot) -> None:
     global __db
     global __bot
     __db = db
     __bot = bot
 
 
-def get_admin_role_ids() -> Set[int]:
-    return (
-        __db.get_int_set(Namespace.ADMIN_CONFIG, AdminKeys.ROLE_IDS) or set()
-    )
+def init_guild(guild: discord.Guild) -> None:
+    configs = __db.guilds.configs
+    config = {
+        "id": guild.id,
+    }
+    configs.insert_one(config)
+
+
+def get_guild_config(guild_id: int) -> int:
+    config = __db.guilds.configs.find_one({"id": guild_id})
+    logging.info(config)
+    return int(config.id)
+
+
+def get_admin_role_ids(guild_id: int) -> Set[int]:
+    return __db.guilds
 
 
 def set_admin_role_ids(new_admins: Iterable[int]) -> None:
