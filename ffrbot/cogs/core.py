@@ -34,7 +34,8 @@ class Core(commands.Cog):
     async def gc(self, ctx: commands.Context) -> None:
         c = config.get_guild_config(ctx.guild.id)
         logging.info(c)
-        await ctx.channel.send(c)
+        if c is not None:
+            await ctx.channel.send(c)
 
     @commands.command()
     @checks.is_bot_admin()
