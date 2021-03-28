@@ -1,16 +1,17 @@
 from typing import *
 
 from .race import Race
-from .racer import Racer
+from ...common.discord_user import DiscordUser
+from ...common.redis_client import RedisClient
 
 
-class AsyncRacer(Racer):
+class AsyncRacer(DiscordUser):
     """
     A class to model a racer in a synchronous race
     """
 
-    def __init__(self, user_id: str, name: str, display_name: str) -> None:
-        super().__init__(user_id, name, display_name)
+    def __init__(self, user_id: int, db: RedisClient) -> None:
+        super().__init__(user_id, db)
 
         self.time: Optional[int] = None
         self.forfeited = False

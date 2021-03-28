@@ -1,5 +1,7 @@
+# type: ignore
 from .ffrvoter import FFRVoter
 import logging
+from discord.ext import commands
 
 
 class Poll:
@@ -36,7 +38,7 @@ class Poll:
     def get_count(self):
         return len(self.voters)
 
-    def add_option(self, ctx: any, args: list):
+    def add_option(self, ctx: commands.Context, args: list):
         id = args[0]
         description = args[1]
         if id in self.options:

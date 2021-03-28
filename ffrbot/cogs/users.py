@@ -53,8 +53,8 @@ class Users(commands.Cog):
             await ctx.channel.send(text.set_twitch_id_not_found)
             raise Exception("twitch id not found, exiting early")
 
-        async def yes():
-            user.twitch_id = id
+        async def yes() -> None:
+            user.twitch_id = twitch_id
 
         await wait_for_yes_no(
             self.bot,
@@ -67,7 +67,7 @@ class Users(commands.Cog):
         user.twitch_id = value
 
     @commands.command(aliases=["gettwitch", "gettwitchlink"])
-    async def get_twitch_link(self, ctx: commands.Context):
+    async def get_twitch_link(self, ctx: commands.Context) -> None:
         """
         Gets your twitch link or the twitch link for any mentioned members
         """
@@ -103,7 +103,7 @@ class Users(commands.Cog):
         available to the bot.
         """
 
-        async def yes():
+        async def yes() -> None:
             user = self.get_user(ctx.author.id)
             user.delete()
 

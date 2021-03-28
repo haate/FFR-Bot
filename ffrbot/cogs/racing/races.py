@@ -27,9 +27,9 @@ def allow_races(ctx):
 
 
 class Races(commands.Cog):
-    def __init__(self, bot, db):
-        self.bot: commands.Bot = bot
-        self.db: RedisClient = db
+    def __init__(self, bot: commands.Bot, db: RedisClient) -> None:
+        self.bot = bot
+        self.db = db
         self.sync_races: TypedDict[str, SyncRace] = dict()
         self.async_races: TypedDict[str, AsyncRace] = dict()
         self.twitch_ids: TypedDict[str, str] = dict()

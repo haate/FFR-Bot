@@ -1,3 +1,4 @@
+# type: ignore
 from discord.ext import commands
 from discord.utils import get
 from discord import File
@@ -14,7 +15,7 @@ from .stv_election import StvElection
 
 
 class Polls(commands.Cog):
-    def __init__(self, bot, db):
+    def __init__(self, bot: commands.Bot, db: RedisClient):
         self.bot = bot
         self.db: RedisClient = db
         self.polls = dict()

@@ -1,7 +1,9 @@
+# type: ignore
 import math
 from .poll import Poll, AlreadyVoted, VoteNotOpen, VoteAlreadyClosed
 from .ffrvoter import FFRVoter
 import logging
+from discord.ext import commands
 import csv
 
 
@@ -38,7 +40,7 @@ class StvElection(Poll):
             )
         return r_val
 
-    def add_option(self, ctx: any, args: list):
+    def add_option(self, ctx: commands.Context, args: list):
         mentions = ctx.message.mentions
         user = mentions[0]
         id = str(user.id)

@@ -2,25 +2,25 @@ import sys
 import time
 import asyncio
 import logging
-from watchdog.observers import Observer
-from watchdog.events import LoggingEventHandler
+from watchdog.observers import Observer  # type: ignore
+from watchdog.events import LoggingEventHandler  # type: ignore
 import multiprocessing
-from typing import Optional
+from typing import *
 
 from . import bot
 
 
-class Event(LoggingEventHandler):
+class Event(LoggingEventHandler):  # type: ignore
     def __init__(self, process: Optional[multiprocessing.Process]):
         super().__init__()
         self.bot_process = process
 
-    def event_loop_wrapper(self):
+    def event_loop_wrapper(self) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         bot.main()
 
-    def dispatch(self, event):
+    def dispatch(self, event: Any) -> None:
         logging.info(event)
         if self.bot_process is not None:
             self.bot_process.terminate()
@@ -30,7 +30,7 @@ class Event(LoggingEventHandler):
         self.bot_process.start()
 
 
-def handle_exit(observer: Observer):
+def handle_exit(observer: Any) -> None:
     try:
         observer.stop()
     except Exception:
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         level=logging.INFO,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    bot_process: Optional[multiprocessing.Process] = multiprocessing.Process(
+    bot_process: multiprocessing.Process = multiprocessing.Process(
         target=bot.main, daemon=True
     )
     bot_process.start()

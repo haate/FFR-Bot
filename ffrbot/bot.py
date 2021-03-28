@@ -54,7 +54,7 @@ def main() -> None:
     bot.add_cog(ConfigCommands(bot))
 
     @bot.event
-    async def on_ready():
+    async def on_ready() -> None:
         logging.info(f"python version: {platform.python_version()}")
         logging.info(f"discord.py version: {discord.__version__}")
         logging.info("Logged in as")
@@ -63,7 +63,7 @@ def main() -> None:
         logging.info("------")
 
     @bot.event
-    async def on_command_completion(ctx: commands.Context):
+    async def on_command_completion(ctx: commands.Context) -> None:
         msg: discord.Message = ctx.message
 
         try:
@@ -77,7 +77,7 @@ def main() -> None:
     @bot.event
     async def on_command_error(
         ctx: commands.Context, error: commands.CommandError
-    ):
+    ) -> None:
         msg: discord.Message = ctx.message
         logging.warning("command error: " + str(error))
         try:
@@ -88,7 +88,9 @@ def main() -> None:
                 f" original command possibly deleted"
             )
 
-    def handle_exit(client, loop):
+    def handle_exit(
+        client: commands.Bot, loop: asyncio.AbstractEventLoop
+    ) -> None:
         # taken from https://stackoverflow.com/a/50981577
         loop.run_until_complete(client.logout())
         for t in asyncio.Task.all_tasks(loop=loop):
@@ -106,12 +108,12 @@ def main() -> None:
             except asyncio.CancelledError:
                 pass
 
-    def run_client(client, *args, **kwargs):
+    def run_client(client: commands.Bot, token: str) -> None:
         loop = asyncio.get_event_loop()
         while True:
             try:
                 logging.info("Starting connection")
-                loop.run_until_complete(client.start(*args, **kwargs))
+                loop.run_until_complete(client.start(token))
             except KeyboardInterrupt:
                 handle_exit(client, loop)
                 client.loop.close()

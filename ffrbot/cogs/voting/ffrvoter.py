@@ -1,3 +1,4 @@
+# type: ignore
 class FFRVoter:
     """
     This is a class representing a voter in an election
