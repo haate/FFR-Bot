@@ -14,8 +14,8 @@ import os
 from .cogs.core import Core
 
 # from .cogs.voting.polls import Polls
-# from .cogs.rng import RNG
-# from .cogs.users import Users
+from .cogs.rng import RNG
+from .cogs.users import Users
 from .cogs.config import ConfigCommands
 
 
@@ -57,8 +57,8 @@ def main() -> None:
     # bot.add_cog(Races(bot, db))
     # bot.add_cog(Roles(bot, db))
     # bot.add_cog(Polls(bot, db))
-    # bot.add_cog(RNG(bot))
-    # bot.add_cog(Users(bot, db))
+    bot.add_cog(RNG(bot))
+    bot.add_cog(Users(bot, db))
     bot.add_cog(ConfigCommands(bot))
 
     @bot.event

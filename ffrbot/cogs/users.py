@@ -3,9 +3,9 @@ from typing import *
 import discord
 import re
 import logging
-from ..common import text
+from pymongo import MongoClient
 
-from ..common.redis_client import RedisClient
+from ..common import text
 from ..common.discord_user import DiscordUser
 from ..common.snippits import wait_for_yes_no
 
@@ -15,7 +15,7 @@ class Users(commands.Cog):
     Users related commands
     """
 
-    def __init__(self, bot: commands.Bot, db: RedisClient):
+    def __init__(self, bot: commands.Bot, db: MongoClient):
         logging.info("initializing Users Cog")
         self.db = db
         self.bot = bot

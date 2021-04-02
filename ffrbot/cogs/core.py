@@ -1,9 +1,9 @@
 from ..common import constants, checks, config, snippits
-from ..common.redis_client import RedisClient
 
 from discord.ext import commands
 from typing import *
 import discord
+from pymongo import MongoClient
 
 import logging
 
@@ -13,9 +13,9 @@ class Core(commands.Cog):
     Core bot commands
     """
 
-    def __init__(self, bot: commands.Bot, db: RedisClient):
-        self.bot: commands.Bot = bot
-        self.db: RedisClient = db
+    def __init__(self, bot: commands.Bot, db: MongoClient):
+        self.bot = bot
+        self.db = db
 
     @commands.command()
     @commands.guild_only()
@@ -31,7 +31,12 @@ class Core(commands.Cog):
         config.init_guild(guild)
 
     @commands.command()
+    @commands.guild_only()
     async def gc(self, ctx: commands.Context) -> None:
+        """
+        Prints the guild config -- development use only
+        """
+        assert isinstance(ctx.guild, discord.Guild)
         c = config.get_guild_config(ctx.guild.id)
         logging.info(c)
         if c is not None:
