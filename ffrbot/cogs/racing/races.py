@@ -1,72 +1,85 @@
 import pickle
 from typing import *
-
-import redis
+from pymongo import MongoClient
 
 from discord.ext import commands
+import discord
 
-# from ..common import checks
-from ffrbot.common import config
+from ...common import config
 import logging
 
-# from ..common import constants
 from .sync_race import SyncRace
 from .async_race import AsyncRace
-from ffrbot.common.redis_client import RedisClient, Namespace, RaceKeys
 from .race import Race
 
-allow_races_bool: bool = True
 
-
-def is_race_channel(ctx):
-    return ctx.channel.name == config.get_race_org_channel_id()
-
-
-def allow_races(ctx):
-    return allow_races_bool
+def is_race_channel(ctx: commands.Context) -> bool:
+    if isinstance(ctx.channel, discord.TextChannel) and isinstance(
+        ctx.guild, discord.Guild
+    ):
+        return ctx.channel.id == config.get_race_org_channel_id(ctx.guild.id)
+    else:
+        return False
 
 
 class Races(commands.Cog):
-    def __init__(self, bot: commands.Bot, db: RedisClient) -> None:
+    def __init__(self, bot: commands.Bot, db: MongoClient) -> None:
         self.bot = bot
         self.db = db
-        self.sync_races: TypedDict[str, SyncRace] = dict()
-        self.async_races: TypedDict[str, AsyncRace] = dict()
-        self.twitch_ids: TypedDict[str, str] = dict()
+        self.sync_races: Dict[str, SyncRace] = dict()
+        self.async_races: Dict[str, AsyncRace] = dict()
+        self.twitch_ids: Dict[str, str] = dict()
 
-    def load_data(self) -> None:
-        temp_sync_races = self.db.get_obj_dict(
-            Namespace.RACE_CONFIG, RaceKeys.SYNC_RACES
+    def get_active_sync_race_ids(self) -> List[int]:
+        sync_races_collection = self.db.races.sync_races
+        sync_race_ids = list(
+            sync_races_collection.find({"active": {"$eq": True}}, ["id"])
         )
+        logging.info("active sync race ids")
+        logging.info(str(sync_race_ids))
+        return sync_race_ids
 
-        temp_async_races = self.db.get_obj_dict(
-            Namespace.RACE_CONFIG, RaceKeys.ASYNC_RACES
+    def get_active_async_race_ids(self) -> List[int]:
+        async_races_collection = self.db.races.async_races
+        async_race_ids = list(
+            async_races_collection.find({"active": {"$eq": True}}, ["id"])
         )
+        logging.info("active async race ids")
+        logging.info(str(async_race_ids))
+        return async_race_ids
 
-        temp_twitch_ids = dict(self.db.hgetall("twitchids"))
-        for k, v in temp_twitch_ids.items():
-            self.twitch_ids[k.decode("utf-8")] = v.decode("utf-8")
-
-    def save_race(self, race: Race) -> None:
-        race_type = "sync_race" if isinstance(race, SyncRace) else "async_race"
-
-        self.db.hset(
-            race_type,
-            race.id,
-            pickle.dumps(race, protocol=pickle.HIGHEST_PROTOCOL),
+    def get_all_sync_race_ids(self) -> List[int]:
+        sync_races_collection = self.db.races.sync_races
+        sync_race_ids = list(
+            sync_races_collection.find({}, ["id"])
         )
+        logging.info("all sync race ids")
+        logging.info(str(sync_race_ids))
+        return sync_race_ids
 
-    def verify_save(self, race: Race) -> None:
-        race_type = "sync_race" if isinstance(race, SyncRace) else "async_race"
-        saved_version = pickle.loads(self.db.hget(race_type, race.id))
-        logging.debug("original: " + str(race))
-        logging.debug("saved: " + str(saved_version))
-        logging.debug(saved_version == race)
+    def get_all_async_race_ids(self) -> List[int]:
+        async_races_collection = self.db.races.async_races
+        async_race_ids = list(
+            async_races_collection.find({}, ["id"])
+        )
+        logging.info("all async race ids")
+        logging.info(str(async_race_ids))
+        return async_race_ids
+    
+    
+
 
     @commands.command(aliases=["sr", "startrace"])
-    @commands.check(is_race_channel)
-    @commands.check(allow_races)
-    async def start_race(self, ctx, *, name=None):
-        if name is None:
+    # @commands.check(is_race_channel)
+    @commands.guild_only()
+    async def start_race(self, ctx: commands.Context, *name_list: str) -> None:
+        assert isinstance(ctx.guild, discord.Guild)
+        if len(name_list) == 0:
             await ctx.author.send("you forgot to name your race")
-            return
+            raise Exception("no name for race in start race command")
+        
+        name = " ".join(name_list)
+        guild_id = ctx.guild.id
+
+        
+        

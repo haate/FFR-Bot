@@ -2,8 +2,8 @@ import sys
 import time
 import asyncio
 import logging
-from watchdog.observers import Observer  # type: ignore
-from watchdog.events import LoggingEventHandler  # type: ignore
+from watchdog.observers import Observer
+from watchdog.events import LoggingEventHandler
 import multiprocessing
 from typing import *
 
@@ -58,11 +58,9 @@ if __name__ == "__main__":
         logging.exception(e)
         pass
 
-    bot_process = None
+    bot_process: Optional[multiprocessing.Process] = None
     try:
-        bot_process: multiprocessing.Process = multiprocessing.Process(
-            target=bot.main, daemon=True
-        )
+        bot_process = multiprocessing.Process(target=bot.main, daemon=True)
         bot_process.start()
     except Exception as e:
         logging.exception(e)

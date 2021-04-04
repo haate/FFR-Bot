@@ -9,8 +9,8 @@ from pymongo import MongoClient
 import os
 
 
-# from .cogs.racing.races import Races
-# from .cogs.roles import Roles
+from .cogs.racing.races import Races
+from .cogs.roles import Roles
 from .cogs.core import Core
 
 # from .cogs.voting.polls import Polls
@@ -54,8 +54,8 @@ def main() -> None:
     logging.info("initializing bot.")
 
     bot.add_cog(Core(bot, db))
-    # bot.add_cog(Races(bot, db))
-    # bot.add_cog(Roles(bot, db))
+    bot.add_cog(Races(bot, db))
+    bot.add_cog(Roles(bot, db))
     # bot.add_cog(Polls(bot, db))
     bot.add_cog(RNG(bot))
     bot.add_cog(Users(bot, db))

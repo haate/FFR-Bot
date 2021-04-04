@@ -1,18 +1,22 @@
 from typing import *
+from discord.ext import commands
+from pymongo import MongoClient
 
 from .race import Race
-from .racer import Racer
+from ...common.discord_user import DiscordUser
 
 import time
 
 
-class SyncRacer(Racer):
+class SyncRacer(DiscordUser):
     """
     A class to model a racer in a synchronous race
     """
 
-    def __init__(self, user_id: str, name: str, display_name: str) -> None:
-        super().__init__(user_id, name, display_name)
+    def __init__(
+        self, user_id: int, bot: commands.Bot, db: MongoClient
+    ) -> None:
+        super().__init__(user_id, bot, db)
 
         self.readied = False
         self.time: Optional[int] = None
@@ -39,12 +43,12 @@ class SyncRace(Race):
     A class to model a synchronous race
     """
 
-    def __init__(self, name: str, race_id: str) -> None:
+    def __init__(self, name: str, race_id: int) -> None:
         super().__init__()
-        self._runners: TypedDict[str, SyncRacer] = dict()
+        self._runners: Dict[int, SyncRacer] = dict()
         self._start_time: Optional[int] = None
         self._name: str = name
-        self._id: str = race_id
+        self._id: int = race_id
         self._finished: bool = False
 
     @property

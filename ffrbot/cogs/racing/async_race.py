@@ -1,8 +1,9 @@
 from typing import *
+from pymongo import MongoClient
+from discord.ext import commands
 
 from .race import Race
 from ...common.discord_user import DiscordUser
-from ...common.redis_client import RedisClient
 
 
 class AsyncRacer(DiscordUser):
@@ -10,7 +11,9 @@ class AsyncRacer(DiscordUser):
     A class to model a racer in a synchronous race
     """
 
-    def __init__(self, user_id: int, db: RedisClient) -> None:
+    def __init__(
+        self, user_id: int, bot: commands.Bot, db: MongoClient
+    ) -> None:
         super().__init__(user_id, db)
 
         self.time: Optional[int] = None
@@ -31,11 +34,11 @@ class AsyncRace(Race):
     A class to model an asynchronous race
     """
 
-    def __init__(self, name: str, id: str) -> None:
-        self.runners: TypedDict[str, AsyncRacer] = dict()
+    def __init__(self, name: str, id: int) -> None:
+        self.runners: Dict[str, AsyncRacer] = dict()
         self.started: bool = False
         self.name: str = name
-        self.id: str = id
+        self.id: int = id
         self.finished: bool = False
 
     def get_started(self) -> bool:

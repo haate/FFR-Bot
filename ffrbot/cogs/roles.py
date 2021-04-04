@@ -1,15 +1,15 @@
 from discord.ext import commands
+from pymongo import MongoClient
 
 import discord
 import logging
 from typing import *
 from ..common import config, checks, text
 from ..common.snippits import wait_for_yes_no
-from ..common.redis_client import RedisClient, Namespace, RoleKeys
 
 
 class Roles(commands.Cog):
-    def __init__(self, bot: commands.Bot, db: RedisClient) -> None:
+    def __init__(self, bot: commands.Bot, db: MongoClient) -> None:
         self.bot = bot
         self.db = db
 
@@ -37,9 +37,9 @@ class Roles(commands.Cog):
         for i in range(len(args) // 2):
             role_name: str = args[2 * i]
             try:
-                role = [
-                    role for role in guild.roles if role.name == role_name
-                ][0]
+                role = [role for role in guild.roles if role.name == role_name][
+                    0
+                ]
             except IndexError:
                 await ctx.author.send(
                     'could not find the role named: "' + role_name + '"'
@@ -240,9 +240,12 @@ class Roles(commands.Cog):
             or dict()
         )
 
+        role_requests_channel_id = (
+            config.get_role_requests_channel_id(ctx.guild.id) or -1
+        )
         role_requests_channel = cast(
             Optional[discord.TextChannel],
-            ctx.guild.get_channel(config.get_role_requests_channel_id()),
+            ctx.guild.get_channel(role_requests_channel_id),
         )
 
         if role_requests_channel is None:
@@ -329,19 +332,21 @@ class Roles(commands.Cog):
         self, payload: discord.RawReactionActionEvent
     ) -> None:
 
-        msg_id_role_id_map = self.db.get_str_dict(
-            Namespace.ROLE_CONFIG, RoleKeys.MESSAGE_ID_ROLE_ID_MAP
+        sar_collection = self.db.roles.self_assignable_roles
+        msg_id_to_role_id_map = sar_collection.find_one(
+            {"guild_id": {"$eq": payload.guild_id}}, ["msg_id_to_role_id_map"]
         )
 
         if (
-            str(payload.message_id) in msg_id_role_id_map.keys()
+            msg_id_to_role_id_map is not None and
+            str(payload.message_id) in msg_id_to_role_id_map.keys()
             and payload.user_id != self.bot.user.id
         ):
             guild = self.bot.get_guild(payload.guild_id or -1)
             if guild is None or payload.channel_id is None:
                 return
             role = guild.get_role(
-                int(msg_id_role_id_map[str(payload.message_id)])
+                int(msg_id_to_role_id_map[str(payload.message_id)])
             )
             if role is None:
                 return

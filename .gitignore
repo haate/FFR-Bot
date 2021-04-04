@@ -112,8 +112,6 @@ token.txt
 # local docker deploy script
 deploy.ps1
 
-# vscode
-.vscode/
 *.code-workspace
 
 # vs
