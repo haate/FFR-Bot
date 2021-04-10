@@ -1,7 +1,10 @@
 import os
 
 SLEEP_TIME = 5000
-BOT_ADMIN_ID = 140605120579764226
+try:
+    BOT_ADMIN_ID = int(os.environ["BOT_ADMIN_ID"])
+except KeyError:
+    BOT_ADMIN_ID = 140605120579764226
 try:
     VERSION = os.environ["BOT_VERSION"]
 except KeyError:

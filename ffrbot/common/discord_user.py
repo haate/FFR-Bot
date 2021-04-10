@@ -1,6 +1,7 @@
 from typing import *
 from pymongo import MongoClient
 from discord.ext import commands
+import discord
 
 
 class DiscordUser:
@@ -11,11 +12,16 @@ class DiscordUser:
         self.__twitch_id: Optional[str] = None
 
     def display_name(self, guild_id: int) -> str:
-        return (
-            self.__bot.get_guild(guild_id)
-            .get_member(self.user_id)
-            .display_name
-        )
+        guild = self.__bot.get_guild(guild_id)
+        user = self.__bot.get_user(self.user_id)
+        if user is None:
+            return ""
+
+        if guild is None:
+            return user.name
+        else:
+            member = guild.get_member(self.user_id)
+            return member.display_name if member is not None else user.name
 
     @property
     def name(self) -> str:
@@ -30,9 +36,7 @@ class DiscordUser:
 
     @property
     def twitch_id(self) -> Optional[str]:
-        twitch_info = self.__db.users.twitch.find_one(
-            {"user_id": self.user_id}
-        )
+        twitch_info = self.__db.users.twitch.find_one({"user_id": self.user_id})
         if twitch_info is not None:
 
             try:

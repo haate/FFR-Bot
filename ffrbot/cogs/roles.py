@@ -41,9 +41,7 @@ class Roles(commands.Cog):
                     0
                 ]
             except IndexError:
-                await ctx.author.send(
-                    'could not find the role named: "' + role_name + '"'
-                )
+                await ctx.author.send(text.could_not_find_role(role_name))
                 await ctx.message.delete()
                 raise Exception("couldn't find role name: " + role_name)
             roles.append(role)
@@ -332,22 +330,24 @@ class Roles(commands.Cog):
         self, payload: discord.RawReactionActionEvent
     ) -> None:
 
-        sar_collection = self.db.roles.self_assignable_roles
-        msg_id_to_role_id_map = sar_collection.find_one(
-            {"guild_id": {"$eq": payload.guild_id}}, ["msg_id_to_role_id_map"]
-        )
+        if payload.guild_id is None:
+            return
+
+        roles_config = config.get_role_config(payload.guild_id)
+        if roles_config is None:
+            return
+
+        msg_to_role_map = roles_config["msg_to_role_map"]
 
         if (
-            msg_id_to_role_id_map is not None and
-            str(payload.message_id) in msg_id_to_role_id_map.keys()
+            msg_to_role_map is not None
+            and payload.message_id in msg_to_role_map.keys()
             and payload.user_id != self.bot.user.id
         ):
             guild = self.bot.get_guild(payload.guild_id or -1)
             if guild is None or payload.channel_id is None:
                 return
-            role = guild.get_role(
-                int(msg_id_to_role_id_map[str(payload.message_id)])
-            )
+            role = guild.get_role(msg_to_role_map[payload.message_id])
             if role is None:
                 return
 

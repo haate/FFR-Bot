@@ -17,10 +17,9 @@ class ConfigCommands(commands.Cog):
         Adds all pinged roles to the admin roles list
         """
         guild = cast(discord.Guild, ctx.guild)
+        old_admin_ids = config.get_admin_role_ids(guild.id)
         logging.info("adding to the admins roles list")
-        logging.info(
-            "old admins:\n" + repr(config.get_admin_role_ids(guild.id))
-        )
+        logging.info("old admins:\n" + repr(old_admin_ids))
         msg: discord.Message = ctx.message
         new_roles = [x.id for x in msg.role_mentions]
         logging.info("new admin role ids: " + str(new_roles))
@@ -28,13 +27,14 @@ class ConfigCommands(commands.Cog):
             guild.id,
             new_roles,
         )
+        new_admin_ids = config.get_admin_role_ids(guild.id) or []
         channel = cast(discord.TextChannel, ctx.channel)
         send_msg = "admins:\n" + ", ".join(
             [
                 role.mention
                 for role in (
                     cast(discord.Role, guild.get_role(x))
-                    for x in config.get_admin_role_ids(guild.id)
+                    for x in new_admin_ids
                     if guild.get_role(x) is not None
                 )
             ]
@@ -56,7 +56,7 @@ class ConfigCommands(commands.Cog):
         msg: discord.Message = ctx.message
         remove_roles = [x.id for x in msg.role_mentions]
         config.remove_admin_role_ids(guild.id, remove_roles)
-        new_admin_ids = config.get_admin_role_ids(guild.id)
+        new_admin_ids = config.get_admin_role_ids(guild.id) or []
         logging.info("new admins:\n" + repr(new_admin_ids))
         channel = cast(discord.TextChannel, ctx.channel)
         send_msg = "admins:\n" + ", ".join(
@@ -80,12 +80,13 @@ class ConfigCommands(commands.Cog):
         """
         channel = cast(discord.TextChannel, ctx.channel)
         guild = cast(discord.Guild, ctx.guild)
+        admin_role_ids = config.get_admin_role_ids(guild.id) or []
         msg = "admins:\n" + ", ".join(
             [
                 role.mention
                 for role in (
                     cast(discord.Role, guild.get_role(x))
-                    for x in config.get_admin_role_ids()
+                    for x in admin_role_ids
                     if guild.get_role(x) is not None
                 )
             ]
@@ -98,12 +99,12 @@ class ConfigCommands(commands.Cog):
         """
         Sets the polls category to the category of the current channel
         """
-
+        assert isinstance(ctx.guild, discord.Guild)
         category = cast(discord.TextChannel, ctx.channel).category
         if category is None:
             await ctx.channel.send(text.category_not_found)
         else:
-            config.set_polls_category_id(category.id)
+            config.set_polls_category_id(ctx.guild.id, category.id)
 
     @commands.command()
     @checks.is_admin()
@@ -116,6 +117,7 @@ class ConfigCommands(commands.Cog):
         """
 
         assert isinstance(ctx.channel, discord.TextChannel)
+        assert isinstance(ctx.guild, discord.Guild)
 
         logging.info(
             "setting the race organization channel, "
@@ -125,7 +127,7 @@ class ConfigCommands(commands.Cog):
             + str(ctx.channel.id)
         )
 
-        config.set_race_org_channel_id(ctx.channel.id)
+        config.set_race_org_channel_id(ctx.guild.id, ctx.channel.id)
 
     @commands.command()
     @checks.is_admin()
@@ -138,6 +140,7 @@ class ConfigCommands(commands.Cog):
         """
 
         assert isinstance(ctx.channel, discord.TextChannel)
+        assert isinstance(ctx.guild, discord.Guild)
 
         logging.info(
             "setting the race results channel, "
@@ -146,7 +149,7 @@ class ConfigCommands(commands.Cog):
             + ", channel id: "
             + str(ctx.channel.id)
         )
-        config.set_race_results_channel_id(ctx.channel.id)
+        config.set_race_results_channel_id(ctx.guild.id, ctx.channel.id)
 
     @commands.command()
     @checks.is_admin()
@@ -159,6 +162,7 @@ class ConfigCommands(commands.Cog):
         """
 
         assert isinstance(ctx.channel, discord.TextChannel)
+        assert isinstance(ctx.guild, discord.Guild)
 
         logging.info(
             "setting the role requests channel, "
@@ -167,4 +171,4 @@ class ConfigCommands(commands.Cog):
             + ", channel id: "
             + str(ctx.channel.id)
         )
-        config.set_role_requests_channel_id(ctx.channel.id)
+        config.set_role_requests_channel_id(ctx.guild.id, ctx.channel.id)

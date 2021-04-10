@@ -10,6 +10,11 @@ class GuildConfig(TypedDict):
     race_results_channel_id: Optional[int]
 
 
+class SelfAssignableRoleConfig(TypedDict):
+    id: int
+    msg_to_role_map: Dict[int, int]
+
+
 class User(TypedDict):
     id: int
     twitch_id: str

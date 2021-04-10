@@ -66,17 +66,18 @@ add_self_assignable_role_arg_count_off = (
     "The number of role names and descriptions passed to this command"
     "is not even, did you forget one, or are you missing quotes?"
 )
-
 self_assignable_role_message = (
     "To add or remove one of the following roles, click on the reaction on the"
     "message for the role you want to add or remove"
 )
-
-
 cleaning_up_stale_roles = (
     "Removing stale roles/descriptions from the bot database at this point if"
     " any exist."
 )
+
+
+def could_not_find_role(role_name: str) -> str:
+    return f"Could not find the role named: {role_name}"
 
 
 def role_message(name: str, description: str) -> str:

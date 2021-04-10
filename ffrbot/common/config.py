@@ -25,6 +25,10 @@ def get_guild_config(guild_id: int) -> Optional[GuildConfig]:
     return __db.guilds.configs.find_one({"id": guild_id})
 
 
+def get_role_config(guild_id: int) -> Optional[SelfAssignableRoleConfig]:
+    return __db.guilds.role_configs.find_one({"id": guild_id})
+
+
 def get_admin_role_ids(guild_id: int) -> Optional[List[int]]:
     config = get_guild_config(guild_id)
     if config is None:

@@ -14,12 +14,18 @@ def is_admin() -> Callable[..., RT]:
 
     async def predicate(ctx: commands.Context) -> bool:
         user = ctx.author
-        return (
-            isinstance(user, discord.Member)
-            and any(
-                role.id in config.get_admin_role_ids() for role in user.roles
-            )
-        ) or user.id == constants.BOT_ADMIN_ID
+        guild = ctx.guild
+
+        if user.id == constants.BOT_ADMIN_ID:
+            return True
+
+        if guild is None or not isinstance(user, discord.Member):
+            return False
+
+        assert isinstance(ctx.guild, discord.Guild)
+        admin_role_ids = config.get_admin_role_ids(ctx.guild.id) or []
+
+        return any(role.id in admin_role_ids for role in user.roles)
 
     return commands.check(predicate)
 
@@ -45,6 +51,9 @@ def is_role_requests_channel() -> Callable[..., RT]:
     """
 
     async def predicate(ctx: commands.Context) -> bool:
-        return ctx.channel.id == config.get_role_requests_channel_id()
+        guild = ctx.guild
+        guild_id = guild.id if guild is not None else -1
+
+        return ctx.channel.id == config.get_role_requests_channel_id(guild_id)
 
     return commands.check(predicate)
