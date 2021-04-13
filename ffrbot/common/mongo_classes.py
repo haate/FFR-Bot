@@ -21,5 +21,9 @@ class User(TypedDict):
 
 
 class Race(TypedDict):
-    type: Literal["sync", "async"]
+    race_type: Literal["sync", "async"]
+    guild_id: int
+
+
+class RoleConfig(TypedDict):
     guild_id: int

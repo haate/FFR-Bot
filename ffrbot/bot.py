@@ -17,9 +17,7 @@ from .cogs.core import Core
 from .cogs.rng import RNG
 from .cogs.users import Users
 from .cogs.config import ConfigCommands
-
-
-from .common import config, constants
+from .common import constants, config
 
 
 def main() -> None:

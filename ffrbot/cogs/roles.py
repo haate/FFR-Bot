@@ -49,6 +49,7 @@ class Roles(commands.Cog):
             descriptions.append(args[2 * i + 1])
 
         async def add_roles() -> None:
+
             current_role_ids = self.db.get_set(
                 Namespace.ROLE_CONFIG,
                 RoleKeys.ROLE_IDS,

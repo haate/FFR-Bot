@@ -77,7 +77,7 @@ cleaning_up_stale_roles = (
 
 
 def could_not_find_role(role_name: str) -> str:
-    return f"Could not find the role named: {role_name}"
+    return f'Could not find the role named: "{role_name}"'
 
 
 def role_message(name: str, description: str) -> str:

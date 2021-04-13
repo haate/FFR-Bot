@@ -2,15 +2,15 @@ from discord.ext.commands import Bot
 import discord
 from typing import *
 from pymongo import MongoClient
-from .mongo_classes import *
 import logging
+
+from ..mongo_classes import *
 
 __db: MongoClient
 __bot: Bot
-__cache: Dict[Union[str, int], Any] = dict()
 
 
-def init(db: MongoClient, bot: Bot) -> None:
+def init_guild_config(db: MongoClient, bot: Bot) -> None:
     global __db
     global __bot
     __db = db
@@ -23,10 +23,6 @@ def init_guild(guild: discord.Guild) -> None:
 
 def get_guild_config(guild_id: int) -> Optional[GuildConfig]:
     return __db.guilds.configs.find_one({"id": guild_id})
-
-
-def get_role_config(guild_id: int) -> Optional[SelfAssignableRoleConfig]:
-    return __db.guilds.role_configs.find_one({"id": guild_id})
 
 
 def get_admin_role_ids(guild_id: int) -> Optional[List[int]]:

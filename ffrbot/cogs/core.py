@@ -27,7 +27,6 @@ class Core(commands.Cog):
         """
         logging.info("initializing bot in guild.")
         guild: discord.Guild = cast(discord.Guild, ctx.guild)
-
         config.init_guild(guild)
 
     @commands.command()
