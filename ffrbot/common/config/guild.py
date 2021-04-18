@@ -10,7 +10,7 @@ __db: MongoClient
 __bot: Bot
 
 
-def init_guild_config(db: MongoClient, bot: Bot) -> None:
+def init(db: MongoClient, bot: Bot) -> None:
     global __db
     global __bot
     __db = db

@@ -14,12 +14,11 @@ class Event(LoggingEventHandler):  # type: ignore
         self.bot_process = process
 
     def event_loop_wrapper(self) -> None:
-        if "bot" not in sys.modules:
-            try:
-                from . import bot
-            except Exception as e:
-                logging.exception(e)
-                return
+        try:
+            from . import bot
+        except Exception as e:
+            logging.exception(e)
+            return
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         bot.main()

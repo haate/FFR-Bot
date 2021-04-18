@@ -1,3 +1,4 @@
+#!/bin/bash
 Mode=$1
 
 if [ "$Mode" = "lint-fix" ]; then

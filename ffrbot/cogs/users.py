@@ -25,7 +25,7 @@ class Users(commands.Cog):
         try:
             user = self.users[user_id]
         except KeyError:
-            user = DiscordUser(user_id, self.db)
+            user = DiscordUser(user_id, self.bot, self.db)
             self.users[user_id] = user
         return user
 

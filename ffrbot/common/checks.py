@@ -23,7 +23,7 @@ def is_admin() -> Callable[..., RT]:
             return False
 
         assert isinstance(ctx.guild, discord.Guild)
-        admin_role_ids = config.get_admin_role_ids(ctx.guild.id) or []
+        admin_role_ids = config.guild.get_admin_role_ids(ctx.guild.id) or []
 
         return any(role.id in admin_role_ids for role in user.roles)
 
@@ -54,6 +54,8 @@ def is_role_requests_channel() -> Callable[..., RT]:
         guild = ctx.guild
         guild_id = guild.id if guild is not None else -1
 
-        return ctx.channel.id == config.get_role_requests_channel_id(guild_id)
+        return ctx.channel.id == config.guild.get_role_requests_channel_id(
+            guild_id
+        )
 
     return commands.check(predicate)

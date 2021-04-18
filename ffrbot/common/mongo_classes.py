@@ -25,5 +25,11 @@ class Race(TypedDict):
     guild_id: int
 
 
+class SelfAssignableRole(TypedDict):
+    role_id: int
+    description: str
+
+
 class RoleConfig(TypedDict):
     guild_id: int
+    self_assignable_roles: Set[SelfAssignableRole]
