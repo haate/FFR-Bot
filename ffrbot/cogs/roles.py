@@ -182,31 +182,40 @@ class Roles(commands.Cog):
             ctx.guild.id
         )
 
-        roles = [ctx.guild.get_role(int(role_id)) for role_id in role_ids]
+        class Roledetails(TypedDict):
+            name: str
+            role_id: int
+            description: str
 
-        names: Dict[str, str] = {
-            str(role.id): role.name for role in roles if role is not None
-        }
+        role_details: Set[Roledetails]
+
+        if self_assignable_roles is not None:
+
+            for role_info in self_assignable_roles:
+                role_id = role_info["role_id"]
+                role = ctx.guild.get_role(role_id)
+                description = role_info["description"]
+                if role is not None:
+                    role_name = role.name
+                    role_details.add(
+                        {
+                            "role_id": role_id,
+                            "name": role_name,
+                            "description": description,
+                        }
+                    )
 
         embed = discord.Embed(
             title="Self-Assignable Roles",
             description="Lists self assignable roles and their descriptions",
         )
-        logging.debug(
-            "list_roles command"
-            + repr(names)
-            + repr(roles)
-            + repr(descriptions)
-            + repr(role_ids)
-        )
+        logging.debug("list_roles command" + repr(role_details))
 
-        for role_id in role_ids:
+        for role_info in role_details:
             try:
-                name = names[role_id]
-                description = descriptions[role_id]
                 embed.add_field(
-                    name=name,
-                    value=description,
+                    name=role_info["name"],
+                    value=role_info["description"],
                     inline=False,
                 )
             except Exception as e:
@@ -226,20 +235,8 @@ class Roles(commands.Cog):
 
         assert isinstance(ctx.guild, discord.Guild)
 
-        role_ids: Set[str] = (
-            self.db.get_set(Namespace.ROLE_CONFIG, RoleKeys.ROLE_IDS) or set()
-        )
-
-        descriptions: Dict[str, str] = (
-            self.db.get_str_dict(
-                Namespace.ROLE_CONFIG,
-                RoleKeys.ROLE_DESCRIPTIONS,
-            )
-            or dict()
-        )
-
         role_requests_channel_id = (
-            config.get_role_requests_channel_id(ctx.guild.id) or -1
+            config.guild.get_role_requests_channel_id(ctx.guild.id) or -1
         )
         role_requests_channel = cast(
             Optional[discord.TextChannel],
@@ -251,18 +248,18 @@ class Roles(commands.Cog):
             await ctx.message.delete()
             return
 
+        self_assignable_roles = config.role.get_self_assignable_roles(
+            ctx.guild.id
+        )
+
         roles: List[discord.Role] = []
         new_descriptions: Dict[str, str] = dict()
 
-        for i in range(len(role_ids)):
-            role_id = role_ids.pop()
+        for role_info in self_assignable_roles:
+            role_id = role_info["role_id"]
             role = ctx.guild.get_role(int(role_id))
             if role is not None:
                 roles.append(role)
-
-        for k, v in descriptions.items():
-            if k in [str(role.id) for role in roles]:
-                new_descriptions[k] = v
 
         await ctx.channel.send(text.cleaning_up_stale_roles)
         logging.info(roles)
@@ -333,7 +330,7 @@ class Roles(commands.Cog):
         if payload.guild_id is None:
             return
 
-        roles_config = config.get_role_config(payload.guild_id)
+        roles_config = config.role.get_role_config(payload.guild_id)
         if roles_config is None:
             return
 

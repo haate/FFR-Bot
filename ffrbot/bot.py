@@ -26,7 +26,6 @@ def main() -> None:
         level=logging.INFO,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    logging.info("started")
 
     db = MongoClient(
         os.environ.get("MONGO_HOST", "localhost"),

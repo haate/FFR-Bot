@@ -3,19 +3,38 @@ import time
 import asyncio
 import logging
 from watchdog.observers import Observer
-from watchdog.events import LoggingEventHandler
+from watchdog.events import FileSystemEventHandler
 import multiprocessing
 from typing import *
+import importlib
+from threading import Timer
 
 
-class Event(LoggingEventHandler):  # type: ignore
-    def __init__(self, process: Optional[multiprocessing.Process] = None):
+# These are the sequences need to get colored ouput
+grey = "\x1b[38;21m"
+yellow = "\x1b[33;21m"
+red = "\x1b[31;21m"
+green = "\x1b[32;21m"
+bold_red = "\x1b[31;1m"
+reset = "\x1b[0m"
+
+
+class Event(FileSystemEventHandler):  # type: ignore
+    def __init__(
+        self,
+        process: Optional[multiprocessing.Process] = None,
+    ):
+
         super().__init__()
         self.bot_process = process
+        self.timeout: Optional[Timer] = None
 
     def event_loop_wrapper(self) -> None:
         try:
-            from . import bot
+            if "ffrbot.bot" not in sys.modules:
+                importlib.import_module("ffrbot.bot")
+            else:
+                importlib.reload(bot)
         except Exception as e:
             logging.exception(e)
             return
@@ -23,18 +42,37 @@ class Event(LoggingEventHandler):  # type: ignore
         asyncio.set_event_loop(loop)
         bot.main()
 
-    def dispatch(self, event: Any) -> None:
-        logging.info(event)
+    def re_import(self) -> None:
+        logging.info(
+            green + "re-importing and running with saved changes" + reset
+        )
         if self.bot_process is not None:
-            self.bot_process.terminate()
+            try:
+                self.bot_process.terminate()
+                self.bot_process.close()
+            except Exception as e:
+                del self.bot_process
+                pass
         try:
             self.bot_process = multiprocessing.Process(
                 target=self.event_loop_wrapper, daemon=True
             )
-            self.bot_process.start()
+            self.bot_process.run()
         except Exception as e:
             logging.exception(e)
             pass
+
+    def on_any_event(self, event: Any) -> None:
+        if "__pycache__" in event.src_path:
+            return
+        logging.debug(event)
+        logging.debug(self.timeout)
+        if self.timeout:
+            self.timeout.cancel()
+            del self.timeout
+
+        self.timeout = Timer(0.5, self.re_import)
+        self.timeout.start()
 
 
 def handle_exit(observer: Any) -> None:
