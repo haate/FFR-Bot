@@ -4,7 +4,7 @@ from sys import maxsize
 import redis
 import os
 
-redis_db = redis.Redis(host=os.environ.get("REDIS_HOST", "localhost"),
+redis_db = redis.Redis(host=os.environ.get("REDIS_HOST", "host.docker.internal"),
                        port=int(os.environ.get("REDIS_PORT", "6379")))
 
 

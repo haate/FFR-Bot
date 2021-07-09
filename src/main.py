@@ -38,7 +38,7 @@ bot = commands.Bot(command_prefix="?", description=description,
                    case_insensitive=True, intents=intents)
 
 redis_pool = redis.ConnectionPool(host=os.environ.get(
-    "REDIS_HOST", "localhost"), port=int(
+    "REDIS_HOST", "host.docker.internal"), port=int(
     os.environ.get(
         "REDIS_PORT", "6379")),
     decode_responses=False)
